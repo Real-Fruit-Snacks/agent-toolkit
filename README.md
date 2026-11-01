@@ -7,9 +7,10 @@ Pinned installers and config for my coding setup
   <img alt="agent-toolkit: a terminal running the Windows install script" src="docs/assets/cover-light.svg" width="100%">
 </picture>
 
-Download the release assets into the matching folders, then from the repo root:
+Download the release assets, restore the folder layout, then install:
 
 ```powershell
+.\scripts\unpack-release.ps1 -From C:\path\to\downloaded\assets
 .\scripts\install-windows.ps1
 ```
 
