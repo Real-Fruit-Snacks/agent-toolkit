@@ -1,0 +1,24 @@
+# Cover + social preview for this repo. Regenerate from the repo root:
+#   py -3 ..\rfs-brand\tools\make-cover.py docs\assets\cover.toml
+name        = "agent-toolkit"
+description = "Pinned installers and config for my coding setup"
+
+bullets = [
+  "T3 Code, Claude Code, Node, Git, gh",
+  "Windows, WSL and Linux",
+  "A baked WSL distro, ready to import",
+  "One install script per platform",
+]
+
+[panel]
+kind  = "terminal"
+title = "pwsh"
+lines = [
+  "$ .\\scripts\\install-windows.ps1",
+  "== Installing Node.js",
+  "== Installing T3 Code",
+  "== Installing Claude Code CLI",
+  "== Restoring T3 tool cache",
+  "== Restoring Playwright browsers",
+  "ok done. open a new terminal",
+]

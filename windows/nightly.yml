@@ -1,0 +1,9 @@
+version: '0.1.7-nightly.20261101.4035'
+files:
+  - url: T3-Code-0.1.7-nightly.20261101.4035-x64.exe
+    sha512: qAM/OteHcJaahPs633TbEI6nHGtdfKfpESRcbRxdzmQ5UE6XXYHSYVQUv+WNEuUrKZU+nWnlbKgZvR5lDZMTGw==
+    size: 290487624
+  - url: T3-Code-0.1.7-nightly.20261101.4035-arm64.exe
+    sha512: rBS4/effG+xZYj/rLNVD2xpJmCnkn9dKlBkAukXujV4VklLWHSgrRlCumu/0KAZXzI1eakPMz6UIv13dJ88Fig==
+    size: 276072376
+releaseDate: '2026-11-01T15:15:28.584Z'

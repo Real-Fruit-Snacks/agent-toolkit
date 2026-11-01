@@ -1,0 +1,58 @@
+<#
+.SYNOPSIS
+  Regenerates VERSIONS.md from whatever is currently in windows/, linux/, wsl/, caches/.
+  Versions are read from file names; hashes are computed.
+#>
+$ErrorActionPreference = 'Stop'
+$root = Split-Path -Parent $PSScriptRoot
+Set-Location $root
+
+function First($dir, $filter) { Get-ChildItem $dir -Filter $filter -File -ErrorAction SilentlyContinue | Select-Object -First 1 }
+function Ver($file, $regex) { if ($file -and $file.Name -match $regex) { $Matches[1] } else { '' } }
+function Row($label, $file, $regex) {
+  if (-not $file) { return $null }
+  $h = (Get-FileHash $file.FullName -Algorithm SHA256).Hash.ToLower()
+  $mb = [math]::Round($file.Length / 1MB)
+  "| $label | $(Ver $file $regex) | ``$($file.Name)`` | $mb | ``$h`` |"
+}
+
+$t3exe = First windows 'T3-Code-*-x64.exe'
+$lines = @(
+  '# Pinned versions', '',
+  "Generated $(Get-Date -Format 'yyyy-MM-dd') by scripts/write-versions.ps1.", '',
+  '| Component | Version | File | MB | SHA256 |', '|---|---|---|---|---|'
+)
+$rows = @(
+  (Row 'T3 Code (Windows installer)' $t3exe 'T3-Code-(.+)-x64\.exe'),
+  (Row 'T3 Code (Windows portable)'  (First windows 'T3-Code-*-x64.zip') 'T3-Code-(.+)-x64\.zip'),
+  (Row 'T3 server/CLI (win32)'       (First windows 't3-*-win32-x64.zip') 't3-(.+)-win32-x64\.zip'),
+  (Row 'T3 Code (deb)'               (First linux 'T3-Code-*-amd64.deb') 'T3-Code-(.+)-amd64\.deb'),
+  (Row 'T3 Code (AppImage)'          (First linux 'T3-Code-*-x86_64.AppImage') 'T3-Code-(.+)-x86_64\.AppImage'),
+  (Row 'T3 server/CLI (linux)'       (First linux 't3-*-linux-x64.tar.gz') 't3-(.+)-linux-x64\.tar\.gz'),
+  (Row 'Claude Code (Windows)'       (First windows\claude-code 'claude-*-win32-x64.exe') 'claude-(.+)-win32-x64\.exe'),
+  (Row 'Claude Code (Linux glibc)'   (First linux\claude-code 'claude-*-linux-x64') 'claude-(.+)-linux-x64$'),
+  (Row 'Claude Code (Linux musl)'    (First linux\claude-code 'claude-*-linux-x64-musl') 'claude-(.+)-linux-x64-musl'),
+  (Row 'Node.js (msi)'               (First windows 'node-v*-x64.msi') 'node-(v[0-9.]+)-x64\.msi'),
+  (Row 'Node.js (linux)'             (First linux 'node-v*-linux-x64.tar.xz') 'node-(v[0-9.]+)-linux-x64'),
+  (Row 'Git for Windows'             (First windows 'Git-*-64-bit.exe') 'Git-([0-9.]+)-64-bit'),
+  (Row 'GitHub CLI (msi)'            (First windows 'gh_*_windows_amd64.msi') 'gh_([0-9.]+)_windows'),
+  (Row 'GitHub CLI (deb)'            (First linux 'gh_*_linux_amd64.deb') 'gh_([0-9.]+)_linux'),
+  (Row 'WSL platform'                (First wsl 'wsl.*.x64.msi') 'wsl\.([0-9.]+)\.x64'),
+  (Row 'Ubuntu WSL rootfs'           (First wsl 'ubuntu-*-wsl-amd64-*.rootfs.tar.gz') 'ubuntu-([a-z]+)-wsl'),
+  (Row 'Baked distro export'         (First wsl 'ubuntu-dev.tar.gz') '(ubuntu-dev)'),
+  (Row 'chrome-headless-shell (linux)' (First caches\t3-tools-linux\chrome-headless-shell\linux64 '*.zip') 'linux64-([0-9.]+)\.zip')
+) | Where-Object { $_ }
+$lines += $rows
+
+$lines += ''; $lines += '## T3 tool cache (caches/t3-tools-win)'; $lines += ''
+foreach ($t in Get-ChildItem caches\t3-tools-win -Directory -ErrorAction SilentlyContinue) {
+  $v = (Get-ChildItem $t.FullName -Recurse -Directory | Where-Object { $_.Name -match '^\d' } | Select-Object -First 1).Name
+  $lines += "- $($t.Name) $v"
+}
+$lines += ''; $lines += '## Playwright browsers (caches/playwright-browsers)'; $lines += ''
+foreach ($d in Get-ChildItem caches\playwright-browsers -Directory -ErrorAction SilentlyContinue) { $lines += "- $($d.Name)" }
+$lines += ''; $lines += '## npm tarballs (caches/npm)'; $lines += ''
+foreach ($f in Get-ChildItem caches\npm -Filter '*.tgz' -ErrorAction SilentlyContinue) { $lines += "- $($f.Name)" }
+
+[System.IO.File]::WriteAllText((Join-Path $root 'VERSIONS.md'), (($lines -join "`n") + "`n"), (New-Object System.Text.UTF8Encoding $false))
+Write-Host "Wrote VERSIONS.md ($($rows.Count) artifacts)"

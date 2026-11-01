@@ -1,0 +1,37 @@
+# Per-instance environment for T3 Code > Settings > Providers > Claude.
+# Add one line per variable in the "Environment variables" list. Mark tokens as Sensitive.
+# Pick ONE of the blocks below depending on what the internal server speaks.
+#
+# Also set "CLAUDE_CONFIG_DIR path" on the instance to a fresh folder, e.g.
+#   %USERPROFILE%\.claude-work
+# so a cached Anthropic login in ~/.claude never overrides these settings.
+
+# --- Anthropic-compatible gateway (Messages API) ---
+ANTHROPIC_BASE_URL=https://llm-gateway.internal.example/anthropic
+ANTHROPIC_AUTH_TOKEN=<token>            # Sensitive
+ANTHROPIC_API_KEY=                       # explicitly empty so the CLI does not look for an Anthropic key
+# Optional: map the model names your gateway exposes
+ANTHROPIC_DEFAULT_OPUS_MODEL=<gateway-model-id>
+ANTHROPIC_DEFAULT_SONNET_MODEL=<gateway-model-id>
+ANTHROPIC_DEFAULT_HAIKU_MODEL=<gateway-model-id>
+ANTHROPIC_MODEL=<gateway-model-id>
+
+# --- AWS Bedrock ---
+# CLAUDE_CODE_USE_BEDROCK=1
+# AWS_REGION=us-east-1
+# AWS_BEARER_TOKEN_BEDROCK=<token>       # Sensitive, or rely on the AWS profile
+# ANTHROPIC_MODEL=<bedrock-model-id>
+
+# --- Google Vertex ---
+# CLAUDE_CODE_USE_VERTEX=1
+# CLOUD_ML_REGION=us-east5
+# ANTHROPIC_VERTEX_PROJECT_ID=<project>
+
+# --- Internal CA / proxy, if the gateway uses a private certificate ---
+# NODE_EXTRA_CA_CERTS=C:\certs\corp-root.pem
+# HTTPS_PROXY=http://proxy.internal:3128
+# NO_PROXY=localhost,127.0.0.1,.internal.example
+
+# --- Keep the CLI quiet regardless of global env ---
+DISABLE_AUTOUPDATER=1
+CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1

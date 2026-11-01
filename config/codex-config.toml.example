@@ -1,0 +1,9 @@
+# ~/.codex/config.toml  (only if the Codex CLI is added to the toolkit)
+model = "<gateway-model-id>"
+model_provider = "internal"
+
+[model_providers.internal]
+name = "Internal gateway"
+base_url = "https://llm-gateway.internal.example/v1"
+env_key = "INTERNAL_LLM_API_KEY"
+wire_api = "responses"   # or "chat" if the gateway only speaks chat completions

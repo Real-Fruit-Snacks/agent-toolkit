@@ -1,0 +1,16 @@
+* text=auto
+*.sh      text eol=lf
+*.ps1     text eol=crlf
+*.md      text
+*.json    text
+*.toml    text
+*.svg     text eol=lf
+*.png     binary
+*.ico     binary
+*.exe     binary
+*.zip     binary
+*.gz      binary
+*.xz      binary
+*.msi     binary
+*.deb     binary
+*.AppImage binary

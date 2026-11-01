@@ -1,0 +1,19 @@
+{
+  "$comment": "Drop into the CLAUDE_CONFIG_DIR used by the T3 instance as settings.json. Env here applies to every Claude Code run from that config dir, including plain terminal use.",
+  "env": {
+    "ANTHROPIC_BASE_URL": "https://llm-gateway.internal.example/anthropic",
+    "ANTHROPIC_AUTH_TOKEN": "<token>",
+    "ANTHROPIC_API_KEY": "",
+    "DISABLE_AUTOUPDATER": "1",
+    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
+    "DISABLE_TELEMETRY": "1",
+    "DISABLE_ERROR_REPORTING": "1"
+  },
+  "permissions": {
+    "allow": [],
+    "deny": [
+      "WebFetch",
+      "WebSearch"
+    ]
+  }
+}
