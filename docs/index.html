@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>agent-toolkit — pinned installers and config for my coding setup</title>
+<meta name="description" content="One GitHub release that installs T3 Code, the Claude Code CLI, Node, Git and the GitHub CLI at pinned versions, restores the caches they fetch on first run, and imports a baked WSL distro. Windows, WSL and Linux.">
+<link rel="canonical" href="https://real-fruit-snacks.github.io/agent-toolkit/">
+<meta property="og:title" content="agent-toolkit">
+<meta property="og:description" content="Pinned installers and config for my coding setup">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://real-fruit-snacks.github.io/agent-toolkit/">
+<meta property="og:image" content="https://real-fruit-snacks.github.io/agent-toolkit/assets/cover-dark.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="560">
+<meta property="og:image:alt" content="agent-toolkit running its Windows install script, installing Node, T3 Code and the Claude Code CLI and restoring the tool caches">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<link rel="icon" href="assets/favicon.ico" sizes="48x48">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<meta name="theme-color" content="#0C0D10">
+<script>
+  // Theme before first paint: a saved choice wins, otherwise follow the OS.
+  (function () {
+    try {
+      var t = localStorage.getItem('rfs-theme');
+      if (t === 'nightshift' || t === 'dayshift') document.documentElement.setAttribute('data-theme', t);
+    } catch (e) {}
+  })();
+</script>
+<link rel="preload" href="assets/fonts/ibm-plex-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/ibm-plex-mono-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/rfs.css">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <a class="brand" href="https://real-fruit-snacks.github.io/" aria-label="RFS home">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Real-Fruit-Snacks/rfs-brand/main/assets/rfs-lockup-dark.svg">
+        <img alt="RFS" src="https://raw.githubusercontent.com/Real-Fruit-Snacks/rfs-brand/main/assets/rfs-lockup-light.svg" data-lockup>
+      </picture>
+      <span class="sep" aria-hidden="true"></span>
+      <span class="name">agent-toolkit</span>
+    </a>
+    <nav>
+      <a href="#install">Install</a>
+      <a href="#whats">What's in it</a>
+      <a href="#platforms">Platforms</a>
+      <a class="keep" href="https://github.com/Real-Fruit-Snacks/agent-toolkit">GitHub</a>
+      <button class="toggle" type="button" id="theme" aria-label="Switch between Nightshift and Dayshift"><span class="night">Nightshift</span><span class="day">Dayshift</span></button>
+    </nav>
+  </div>
+</header>
+
+<div class="hero">
+  <div class="grid-bg" aria-hidden="true"></div>
+  <div class="glow" aria-hidden="true"></div>
+  <div class="wrap">
+    <div>
+      <p class="label">Windows · WSL · Linux</p>
+      <h1>agent-toolkit</h1>
+      <p class="lead">Pinned installers and config for my coding setup</p>
+      <p class="sub">One release holds T3 Code, the Claude Code CLI, Node, Git and the GitHub CLI at tested versions, the caches those tools would otherwise fetch on first run, and a provisioned WSL distro. Two machines built from the same release are identical, and the install touches the network only to reach whatever model endpoint you point it at.</p>
+
+      <div class="install" id="install">
+        <div class="tabs" role="tablist">
+          <button role="tab" aria-selected="true" data-pane="win">Windows</button>
+          <button role="tab" aria-selected="false" data-pane="wsl">WSL</button>
+          <button role="tab" aria-selected="false" data-pane="lin">Linux</button>
+        </div>
+        <div class="pane" data-active data-id="win"><pre><code>.\scripts\unpack-release.ps1 -From C:\path\to\assets
+.\scripts\install-windows.ps1</code></pre><button class="copy" data-copy=".\scripts\unpack-release.ps1 -From C:\path\to\assets
+.\scripts\install-windows.ps1">Copy</button></div>
+        <div class="pane" data-id="wsl"><pre><code>.\scripts\setup-wsl.ps1</code></pre><button class="copy" data-copy=".\scripts\setup-wsl.ps1">Copy</button></div>
+        <div class="pane" data-id="lin"><pre><code>sudo bash scripts/install-linux.sh</code></pre><button class="copy" data-copy="sudo bash scripts/install-linux.sh">Copy</button></div>
+        <div class="foot">Download the <a href="https://github.com/Real-Fruit-Snacks/agent-toolkit/releases/latest">latest release</a> assets first. <code>unpack-release.ps1</code> sorts them back into the folder layout; the install script then installs the apps, restores the caches and sets the environment variables that turn off their updaters and telemetry. Open a new terminal afterwards.</div>
+      </div>
+    </div>
+    <div class="term" aria-label="Example: the Windows install script running">
+      <div class="bar"><i></i><i></i><i></i><span>pwsh</span></div>
+<pre><code><span class="a">$</span> .\scripts\install-windows.ps1
+<span class="c">==</span> Installing Node.js
+<span class="c">==</span> Installing Git for Windows
+<span class="c">==</span> Installing T3 Code
+<span class="c">==</span> Installing Claude Code CLI
+<span class="c">==</span> Restoring T3 tool cache
+<span class="c">==</span> Restoring Playwright browsers
+<span class="s">ok</span> done. open a new terminal</code></pre>
+    </div>
+  </div>
+</div>
+
+<section id="why">
+  <div class="wrap two">
+    <div>
+      <p class="label">Why</p>
+      <h2>One version of everything</h2>
+    </div>
+    <div>
+      <p>Each tool here fetches something on first run: an updater, a headless browser, a device agent, a model manifest. On a machine that should stay on a known build, or reach only one endpoint, those fetches are a problem. This bundles them, so the only thing the install downloads is nothing.</p>
+      <p class="mute">The Claude Code provider's endpoint is set per instance in T3 Code. Templates for an Anthropic-compatible gateway, Bedrock and Vertex are in <code>config/claude-provider-env.example</code>.</p>
+    </div>
+  </div>
+</section>
+
+<section id="whats">
+  <div class="wrap">
+    <p class="label">What's in it</p>
+    <h2>Pinned in v1.0.0</h2>
+    <table>
+      <tr><th>Component</th><th>Version</th></tr>
+      <tr><td>T3 Code</td><td><code>0.1.7-nightly.20261101.4035</code></td></tr>
+      <tr><td>Claude Code CLI</td><td><code>2.1.316</code></td></tr>
+      <tr><td>Node.js</td><td><code>24.22.2</code></td></tr>
+      <tr><td>Git for Windows</td><td><code>2.56.0.4</code></td></tr>
+      <tr><td>GitHub CLI</td><td><code>2.103.3</code></td></tr>
+      <tr><td>WSL platform</td><td><code>3.0.3</code></td></tr>
+      <tr><td>Ubuntu, plus a provisioned export</td><td><code>24.04 noble</code></td></tr>
+      <tr><td>T3 tool cache</td><td><code>chrome-headless-shell, agent-device, expo-device-hub</code></td></tr>
+      <tr><td>Playwright browsers</td><td><code>chromium, chromium-headless-shell</code></td></tr>
+    </table>
+    <p class="mute" style="margin-top:14px">Every file and its SHA256 is in <a href="https://github.com/Real-Fruit-Snacks/agent-toolkit/blob/main/VERSIONS.md">VERSIONS.md</a>. Rebuild the whole set from a connected machine with <code>scripts/collect.ps1</code>.</p>
+  </div>
+</section>
+
+<section id="platforms">
+  <div class="wrap two">
+    <div>
+      <p class="label">Platforms</p>
+      <h2>Three targets, one layout</h2>
+      <p class="mute">The folders in the repo mirror the release assets: <code>windows</code>, <code>linux</code>, <code>wsl</code>, <code>caches</code>. Pick the platform, download its assets, run its script.</p>
+    </div>
+    <ol class="steps">
+      <li><strong>Windows.</strong> The install script installs the apps silently, restores the tool and browser caches, and sets the environment variables.</li>
+      <li><strong>WSL.</strong> <code>setup-wsl.ps1</code> installs the WSL platform from the bundled MSI and imports a distro that already has Git, Node, the GitHub CLI and the Claude Code CLI inside it.</li>
+      <li><strong>Linux.</strong> <code>install-linux.sh</code> installs T3 Code from the deb and provisions the same tools on a standalone Debian or Ubuntu machine.</li>
+    </ol>
+  </div>
+</section>
+
+<section id="tested">
+  <div class="wrap two">
+    <div>
+      <p class="label">Tested on</p>
+      <ul class="plain">
+        <li>Windows 11 Pro 26300 · Windows PowerShell 5.1 and PowerShell 7: the bake, collect and pin checks run here</li>
+        <li>Ubuntu 24.04 noble under WSL 2: the distro is baked and its contents verified here</li>
+        <li><em>Not</em> tested: a full install from the release assets on a second machine, end to end</li>
+      </ul>
+    </div>
+    <div>
+      <p class="label">Known issues</p>
+      <ul class="plain">
+        <li>The app installers use silent flags that are correct for the pinned versions; a newer installer may change them.</li>
+        <li>Importing the raw Ubuntu rootfs instead of the baked distro needs a network to fetch Playwright browsers.</li>
+        <li>T3 Code pins its on-demand tool versions per build. After bumping T3, run <code>scripts/check-pins.ps1 -Fix</code> or the cache is ignored and a download is attempted.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>MIT for the scripts · bundled binaries keep their own licenses · not affiliated with T3 Tools Inc or Anthropic · <a href="https://github.com/Real-Fruit-Snacks/agent-toolkit">Source</a></span>
+    <span><a href="https://real-fruit-snacks.github.io/">RFS</a> · Real tools. No filler. · <a href="https://github.com/Real-Fruit-Snacks/rfs-brand/blob/main/BRAND.md">Brand</a></span>
+  </div>
+</footer>
+
+<script src="assets/site.js"></script>
+</body>
+</html>
