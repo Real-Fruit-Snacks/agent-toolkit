@@ -41,6 +41,11 @@ Zip caches\t3-tools-linux     'caches--t3-tools-linux.zip'
 Zip caches\playwright-browsers 'caches--playwright-browsers.zip'
 Zip caches\npm                'caches--npm.zip'
 Zip caches\t3-userdata        'caches--t3-userdata.zip'
+Zip caches\playwright-browsers-linux 'caches--playwright-browsers-linux.zip'
+Zip caches\npm-cache          'caches--npm-cache.zip'
+Zip caches\claude-skills      'caches--claude-skills.zip'
+Zip caches\claude-code-docs   'caches--claude-code-docs.zip'
+Zip caches\pip-wheelhouse     'caches--pip-wheelhouse.zip'
 
 Get-ChildItem $out | ForEach-Object { "$($_.Name)`t$([math]::Round($_.Length/1MB)) MB" }
 Get-ChildItem $out -File | Get-FileHash -Algorithm SHA256 | ForEach-Object { "$($_.Hash.ToLower())  $(Split-Path -Leaf $_.Path)" } | Set-Content (Join-Path $out 'SHA256SUMS.txt')

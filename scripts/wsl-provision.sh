@@ -67,16 +67,23 @@ if [ ! -d "$CHS_DIR" ]; then
   mkdir -p "$CHS_DIR.tmp" && unzip -q "$CHS_ZIP" -d "$CHS_DIR.tmp"
   mv "$CHS_DIR.tmp/chrome-headless-shell-linux64" "$CHS_DIR" && rm -rf "$CHS_DIR.tmp"
 fi
-# agent-device / expo-device-hub: same layout T3 uses (npm prefix dir per version)
+# agent-device / expo-device-hub: prefer the fully installed dirs (node_modules included) shipped in caches/t3-tools-linux
 for pkg in agent-device expo-device-hub; do
-  TGZ=$(ls "$CACHES"/npm/$pkg-*.tgz | head -1) || continue
+  if [ -d "$CACHES/t3-tools-linux/$pkg" ]; then
+    cp -r "$CACHES/t3-tools-linux/$pkg" "$T3TOOLS/"; continue
+  fi
+  TGZ=$(ls "$CACHES"/npm/$pkg-*.tgz 2>/dev/null | head -1) || continue
   VER=$(basename "$TGZ" .tgz | sed -E "s/^$pkg-//")
   DEST="$T3TOOLS/$pkg/$VER"
   if [ ! -f "$DEST/.install-complete" ]; then
     mkdir -p "$DEST"
-    printf '{\n  "dependencies": {\n    "%s": "^%s"\n  }\n}\n' "$pkg" "$VER" > "$DEST/package.json"
-    (cd "$DEST" && npm install --no-audit --no-fund --omit=dev "$TGZ" >/dev/null) && touch "$DEST/.install-complete" \
-      || echo "warn: $pkg install needs registry access for transitive deps; T3 will retry when online"
+    printf '{
+  "dependencies": {
+    "%s": "^%s"
+  }
+}
+' "$pkg" "$VER" > "$DEST/package.json"
+    (cd "$DEST" && npm install --no-audit --no-fund --omit=dev --offline --cache "$CACHES/npm-cache" "$pkg@$VER" >/dev/null) && touch "$DEST/.install-complete"       || echo "warn: $pkg install failed offline; T3 will retry when online"
   fi
 done
 chown -R "$DEV_USER:$DEV_USER" "$HOME_DIR/.t3"
@@ -100,6 +107,44 @@ elif [ "$ONLINE" = 1 ]; then
   chown -R "$DEV_USER:$DEV_USER" "$PW"
 fi
 
+log "npm cache (offline installs)"
+if [ -d "$CACHES/npm-cache" ]; then
+  install -d -o "$DEV_USER" -g "$DEV_USER" "$HOME_DIR/.npm-toolkit-cache"
+  cp -r "$CACHES"/npm-cache/. "$HOME_DIR/.npm-toolkit-cache"/ && chown -R "$DEV_USER:$DEV_USER" "$HOME_DIR/.npm-toolkit-cache"
+  npm install -g --offline --cache "$HOME_DIR/.npm-toolkit-cache" --no-audit --no-fund playwright @playwright/cli >/dev/null 2>&1 || echo "warn: global playwright install from cache failed"
+fi
+
+log "Claude Code skills"
+if [ -d "$CACHES/claude-skills" ]; then
+  install -d -o "$DEV_USER" -g "$DEV_USER" "$HOME_DIR/.claude" "$HOME_DIR/.claude/skills"
+  for d in "$CACHES"/claude-skills/*/; do cp -r "$d" "$HOME_DIR/.claude/skills/"; done
+  chown -R "$DEV_USER:$DEV_USER" "$HOME_DIR/.claude"
+fi
+
+log "Python packages for the document skills"
+if [ -d "$CACHES/pip-wheelhouse/linux" ] && [ "$ONLINE" = 1 ]; then
+  apt-get install -y -qq python3-pip python3-venv >/dev/null 2>&1 || true
+fi
+if [ -d "$CACHES/pip-wheelhouse/linux" ]; then
+  sudo -u "$DEV_USER" python3 -m venv "$HOME_DIR/.venv-skills" 2>/dev/null &&   sudo -u "$DEV_USER" "$HOME_DIR/.venv-skills/bin/pip" install --quiet --no-index --find-links "$CACHES/pip-wheelhouse/linux" -r "$CACHES/pip-wheelhouse/requirements.txt"     || echo "warn: wheelhouse install incomplete (python3-venv missing or a wheel absent); run it later"
+fi
+
+log "Claude Code config seed (no account data)"
+install -d -o "$DEV_USER" -g "$DEV_USER" "$HOME_DIR/.claude"
+if [ ! -f "$HOME_DIR/.claude.json" ]; then
+  python3 - "$ROOT/config/claude-home/claude.json.example" "$HOME_DIR/.claude.json" <<'PY' 2>/dev/null || cp "$ROOT/config/claude-home/claude.json.example" "$HOME_DIR/.claude.json"
+import json,sys; d=json.load(open(sys.argv[1])); d.pop("$comment",None); json.dump(d,open(sys.argv[2],"w"),indent=2)
+PY
+  chown "$DEV_USER:$DEV_USER" "$HOME_DIR/.claude.json"
+fi
+[ -f "$HOME_DIR/.claude/settings.json" ] || { cp "$ROOT/config/claude-home/settings.json.example" "$HOME_DIR/.claude/settings.json"; chown "$DEV_USER:$DEV_USER" "$HOME_DIR/.claude/settings.json"; }
+
+log "offline docs"
+install -d -o "$DEV_USER" -g "$DEV_USER" "$HOME_DIR/agent-toolkit-docs"
+[ -d "$CACHES/claude-code-docs" ] && cp -r "$CACHES/claude-code-docs" "$HOME_DIR/agent-toolkit-docs/claude-code"
+[ -d "$ROOT/docs/reference/t3code" ] && cp -r "$ROOT/docs/reference/t3code" "$HOME_DIR/agent-toolkit-docs/t3code"
+chown -R "$DEV_USER:$DEV_USER" "$HOME_DIR/agent-toolkit-docs"
+
 log "environment"
 cat > /etc/profile.d/agent-toolkit.sh <<'EOF'
 export T3CODE_DISABLE_AUTO_UPDATE=1
@@ -111,6 +156,9 @@ export DISABLE_TELEMETRY=1
 export DISABLE_ERROR_REPORTING=1
 export PLAYWRIGHT_BROWSERS_PATH="$HOME/.cache/ms-playwright"
 export PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
+export npm_config_cache="$HOME/.npm-toolkit-cache"
+export npm_config_offline=true
+[ -d "$HOME/.venv-skills" ] && case ":$PATH:" in *":$HOME/.venv-skills/bin:"*) ;; *) export PATH="$HOME/.venv-skills/bin:$PATH" ;; esac
 case ":$PATH:" in *":$HOME/.local/bin:"*) ;; *) export PATH="$HOME/.local/bin:$PATH" ;; esac
 EOF
 

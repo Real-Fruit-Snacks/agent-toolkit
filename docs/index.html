@@ -63,7 +63,7 @@
       <p class="label">Windows · WSL · Linux</p>
       <h1>agent-toolkit</h1>
       <p class="lead">Pinned installers and config for my coding setup</p>
-      <p class="sub">One release holds T3 Code, the Claude Code CLI, Node, Git and the GitHub CLI at tested versions, the caches those tools would otherwise fetch on first run, and a provisioned WSL distro. Two machines built from the same release are identical, and the install touches the network only to reach whatever model endpoint you point it at.</p>
+      <p class="sub">One release holds T3 Code, the Claude Code CLI, Node, Git, the GitHub CLI, PowerShell 7 and Python at tested versions, the caches those tools would otherwise fetch on first run, and a provisioned WSL distro. Two machines built from the same release are identical, and the install touches the network only to reach whatever model endpoint you point it at.</p>
 
       <div class="install" id="install">
         <div class="tabs" role="tablist">
@@ -88,6 +88,7 @@
 <span class="c">==</span> Installing Claude Code CLI
 <span class="c">==</span> Restoring T3 tool cache
 <span class="c">==</span> Restoring Playwright browsers
+<span class="c">==</span> Installing Claude Code skills
 <span class="s">ok</span> done. open a new terminal</code></pre>
     </div>
   </div>
@@ -117,10 +118,14 @@
       <tr><td>Node.js</td><td><code>24.22.2</code></td></tr>
       <tr><td>Git for Windows</td><td><code>2.56.0.4</code></td></tr>
       <tr><td>GitHub CLI</td><td><code>2.103.3</code></td></tr>
+      <tr><td>PowerShell 7</td><td><code>7.6.9</code></td></tr>
+      <tr><td>Python</td><td><code>3.14.10</code></td></tr>
       <tr><td>WSL platform</td><td><code>3.0.3</code></td></tr>
       <tr><td>Ubuntu, plus a provisioned export</td><td><code>24.04 noble</code></td></tr>
       <tr><td>T3 tool cache</td><td><code>chrome-headless-shell, agent-device, expo-device-hub</code></td></tr>
       <tr><td>Playwright browsers</td><td><code>chromium, chromium-headless-shell</code></td></tr>
+      <tr><td>Claude Code skills</td><td><code>anthropics/skills</code>, plus a Python wheelhouse and seeded npm cache</td></tr>
+      <tr><td>Offline docs</td><td><code>Claude Code docs, T3 Code user docs</code></td></tr>
     </table>
     <p class="mute" style="margin-top:14px">Every file and its SHA256 is in <a href="https://github.com/Real-Fruit-Snacks/agent-toolkit/blob/main/VERSIONS.md">VERSIONS.md</a>. Rebuild the whole set from a connected machine with <code>scripts/collect.ps1</code>.</p>
   </div>
@@ -146,7 +151,7 @@
     <div>
       <p class="label">Tested on</p>
       <ul class="plain">
-        <li>Windows 11 Pro 26300 · Windows PowerShell 5.1 and PowerShell 7: the bake, collect and pin checks run here</li>
+        <li>Windows 11 Pro 26300 · Windows PowerShell 5.1: the bake, collect and pin checks run here</li>
         <li>Ubuntu 24.04 noble under WSL 2: the distro is baked and its contents verified here</li>
         <li><em>Not</em> tested: a full install from the release assets on a second machine, end to end</li>
       </ul>

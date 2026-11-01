@@ -34,6 +34,8 @@ $rows = @(
   (Row 'Claude Code (Linux musl)'    (First linux\claude-code 'claude-*-linux-x64-musl') 'claude-(.+)-linux-x64-musl'),
   (Row 'Node.js (msi)'               (First windows 'node-v*-x64.msi') 'node-(v[0-9.]+)-x64\.msi'),
   (Row 'Node.js (linux)'             (First linux 'node-v*-linux-x64.tar.xz') 'node-(v[0-9.]+)-linux-x64'),
+  (Row 'PowerShell 7 (msi)'          (First windows 'PowerShell-*-win-x64.msi') 'PowerShell-([0-9.]+)-win'),
+  (Row 'Python (Windows)'            (First windows 'python-*-amd64.exe') 'python-([0-9.]+)-amd64'),
   (Row 'Git for Windows'             (First windows 'Git-*-64-bit.exe') 'Git-([0-9.]+)-64-bit'),
   (Row 'GitHub CLI (msi)'            (First windows 'gh_*_windows_amd64.msi') 'gh_([0-9.]+)_windows'),
   (Row 'GitHub CLI (deb)'            (First linux 'gh_*_linux_amd64.deb') 'gh_([0-9.]+)_linux'),
@@ -51,6 +53,13 @@ foreach ($t in Get-ChildItem caches\t3-tools-win -Directory -ErrorAction Silentl
 }
 $lines += ''; $lines += '## Playwright browsers (caches/playwright-browsers)'; $lines += ''
 foreach ($d in Get-ChildItem caches\playwright-browsers -Directory -ErrorAction SilentlyContinue) { $lines += "- $($d.Name)" }
+$lines += ''; $lines += '## Also in the release'; $lines += ''
+$lines += '- caches/npm-cache: seeded npm cache for offline installs of playwright, agent-device, expo-device-hub and the skill packages'
+$lines += '- caches/claude-skills: the public anthropics/skills set (Apache-2.0)'
+$lines += '- caches/claude-code-docs: Claude Code documentation, markdown, from code.claude.com/docs/llms.txt'
+$lines += '- caches/pip-wheelhouse: Python wheels for the document skills (win + linux)'
+$lines += '- caches/playwright-browsers-linux and caches/t3-tools-linux: Linux browser and tool caches taken from the baked distro'
+$lines += '- docs/reference/t3code: T3 Code user docs (MIT), in the repo'
 $lines += ''; $lines += '## npm tarballs (caches/npm)'; $lines += ''
 foreach ($f in Get-ChildItem caches\npm -Filter '*.tgz' -ErrorAction SilentlyContinue) { $lines += "- $($f.Name)" }
 

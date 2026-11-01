@@ -1,0 +1,35 @@
+{
+  "favorites": [
+    {
+      "provider": "claudeAgent",
+      "model": "claude-fable-5-1"
+    }
+  ],
+  "providerModelPreferences": {
+    "claudeAgent": {
+      "hiddenModels": [
+        "claude-fable-5",
+        "claude-opus-5",
+        "claude-opus-4-7",
+        "claude-opus-4-6",
+        "claude-opus-4-5",
+        "claude-sonnet-5",
+        "claude-sonnet-4-6",
+        "claude-haiku-4-5"
+      ],
+      "modelOrder": []
+    }
+  },
+  "projectSettingsFolded": true,
+  "enableAgentDeviceAccess": true,
+  "enableDeviceSupport": true,
+  "deviceOnboardingCompleted": true,
+  "idleCompaction": "onReturn",
+  "removeAgentCreditsOnMerge": true,
+  "providerInstances": {
+    "codex": {
+      "driver": "codex",
+      "enabled": false
+    }
+  }
+}

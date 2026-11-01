@@ -1,0 +1,9 @@
+{
+  "$comment": "Seed for ~/.claude.json (or CLAUDE_CONFIG_DIR/.claude.json). Skips first-run onboarding so the CLI starts straight into a session when auth comes from ANTHROPIC_BASE_URL + ANTHROPIC_AUTH_TOKEN. No account fields on purpose.",
+  "hasCompletedOnboarding": true,
+  "theme": "dark",
+  "autoUpdates": false,
+  "preferredNotifChannel": "terminal_bell",
+  "editorMode": "normal",
+  "mcpServers": {}
+}

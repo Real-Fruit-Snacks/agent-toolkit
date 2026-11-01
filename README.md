@@ -14,7 +14,7 @@ Download the release assets, restore the folder layout, then install:
 .\scripts\install-windows.ps1
 ```
 
-This installs T3 Code, the Claude Code CLI, Node, Git, and the GitHub CLI, restores the caches those tools would otherwise fetch on first use, and sets the environment variables that turn off their updaters and telemetry. It pins one tested version of every piece, so two machines built from the same release are identical. The binaries live on the GitHub release; the repo holds the scripts, config, and a manifest of what is pinned.
+This installs T3 Code, the Claude Code CLI, Node, Git, the GitHub CLI, PowerShell 7, and Python, restores the caches those tools would otherwise fetch on first use, seeds a working config, and sets the environment variables that turn off their updaters and telemetry. It pins one tested version of every piece, so two machines built from the same release are identical. The binaries live on the GitHub release; the repo holds the scripts, config, and a manifest of what is pinned.
 
 ## What's in it
 
@@ -27,10 +27,18 @@ This installs T3 Code, the Claude Code CLI, Node, Git, and the GitHub CLI, resto
 | `scripts/check-pins.ps1` | Checks the tool cache against the versions the T3 build expects |
 | `scripts/bake-wsl.ps1` | Provisions and exports the Ubuntu distro as one importable tarball |
 | `scripts/package-release.ps1` | Bundles the folders into release assets and prints the publish command |
+| `scripts/unpack-release.ps1` | Verifies downloaded assets against SHA256SUMS.txt and restores the folder layout |
+
+Also in the release, restored by the install scripts:
+
+- The public Claude Code skills set (docx, pdf, pptx, xlsx, and others), with a Python wheelhouse for their dependencies
+- A seeded npm cache so `playwright`, `agent-device`, `expo-device-hub`, and the packages the skills call for install with `--offline`
+- Claude Code documentation as markdown, and the T3 Code user docs under `docs/reference/t3code`
+- Linux copies of the T3 tool cache and Playwright browsers for standalone Linux installs
 
 ## Tested on
 
-- Windows 11 Pro 26300 · PowerShell 5.1 and 7 · the bake, collect, and pin checks run here
+- Windows 11 Pro 26300 · Windows PowerShell 5.1 · the bake, collect, and pin checks run here
 - Ubuntu 24.04 noble under WSL 2 · the distro is baked and its contents verified here
 - *Not* tested: a full install from release assets on a second machine, end to end
 
@@ -42,7 +50,7 @@ This installs T3 Code, the Claude Code CLI, Node, Git, and the GitHub CLI, resto
 
 ## Configuration
 
-Endpoint settings for the Claude Code provider go per instance in T3 Code, under Settings, Providers, Claude, in the Environment variables list. Templates for an Anthropic-compatible gateway, Bedrock, and Vertex are in `config/claude-provider-env.example`. The environment variables that disable updaters and telemetry are listed in `config/env-vars.md` and set by the install script.
+The install script seeds T3 Code settings, keybindings, and a Claude Code config that skips first-run onboarding, but only where those files do not already exist. Templates are in `config/`. Endpoint settings for the Claude Code provider go per instance in T3 Code, under Settings, Providers, Claude, in the Environment variables list. Templates for an Anthropic-compatible gateway, Bedrock, and Vertex are in `config/claude-provider-env.example`. The environment variables that disable updaters and telemetry are listed in `config/env-vars.md` and set by the install script.
 
 ## License
 
