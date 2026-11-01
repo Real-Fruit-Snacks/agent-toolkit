@@ -7,14 +7,15 @@ Pinned installers and config for my coding setup
   <img alt="agent-toolkit: a terminal running the Windows install script" src="docs/assets/cover-light.svg" width="100%">
 </picture>
 
-Download the release assets, restore the folder layout, then install:
+Download the release assets, verify and restore the folder layout, then install:
 
 ```powershell
-.\scripts\unpack-release.ps1 -From C:\path\to\downloaded\assets
+.\scripts\download-release.ps1 -To C:\toolkit-assets   # or download the assets by hand
+.\scripts\unpack-release.ps1 -From C:\toolkit-assets
 .\scripts\install-windows.ps1
 ```
 
-This installs T3 Code, the Claude Code CLI, Node, Git, the GitHub CLI, PowerShell 7, and Python, restores the caches those tools would otherwise fetch on first use, seeds a working config, and sets the environment variables that turn off their updaters and telemetry. It pins one tested version of every piece, so two machines built from the same release are identical. The binaries live on the GitHub release; the repo holds the scripts, config, and a manifest of what is pinned.
+This installs T3 Code, the Claude Code CLI, Node, Git, the GitHub CLI, PowerShell 7, and Python, restores the caches those tools would otherwise fetch on first use, seeds a working config, and sets the environment variables that turn off their updaters and telemetry. It pins one tested version of every piece, so two machines built from the same release are identical. The binaries live on the GitHub release as separate assets, since GitHub caps each one at 2 GB; a `repo--*.zip` asset carries the repo itself for machines without a clone. The repo holds the scripts, config, and a manifest of what is pinned.
 
 ## What's in it
 
@@ -27,6 +28,7 @@ This installs T3 Code, the Claude Code CLI, Node, Git, the GitHub CLI, PowerShel
 | `scripts/check-pins.ps1` | Checks the tool cache against the versions the T3 build expects |
 | `scripts/bake-wsl.ps1` | Provisions and exports the Ubuntu distro as one importable tarball |
 | `scripts/package-release.ps1` | Bundles the folders into release assets and prints the publish command |
+| `scripts/download-release.ps1` | Fetches every asset of a release into one folder, with or without the GitHub CLI |
 | `scripts/unpack-release.ps1` | Verifies downloaded assets against SHA256SUMS.txt and restores the folder layout |
 
 Also in the release, restored by the install scripts:

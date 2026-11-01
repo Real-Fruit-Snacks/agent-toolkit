@@ -71,8 +71,10 @@
           <button role="tab" aria-selected="false" data-pane="wsl">WSL</button>
           <button role="tab" aria-selected="false" data-pane="lin">Linux</button>
         </div>
-        <div class="pane" data-active data-id="win"><pre><code>.\scripts\unpack-release.ps1 -From C:\path\to\assets
-.\scripts\install-windows.ps1</code></pre><button class="copy" data-copy=".\scripts\unpack-release.ps1 -From C:\path\to\assets
+        <div class="pane" data-active data-id="win"><pre><code>.\scripts\download-release.ps1 -To C:\toolkit-assets
+.\scripts\unpack-release.ps1 -From C:\toolkit-assets
+.\scripts\install-windows.ps1</code></pre><button class="copy" data-copy=".\scripts\download-release.ps1 -To C:\toolkit-assets
+.\scripts\unpack-release.ps1 -From C:\toolkit-assets
 .\scripts\install-windows.ps1">Copy</button></div>
         <div class="pane" data-id="wsl"><pre><code>.\scripts\setup-wsl.ps1</code></pre><button class="copy" data-copy=".\scripts\setup-wsl.ps1">Copy</button></div>
         <div class="pane" data-id="lin"><pre><code>sudo bash scripts/install-linux.sh</code></pre><button class="copy" data-copy="sudo bash scripts/install-linux.sh">Copy</button></div>

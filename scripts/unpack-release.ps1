@@ -34,6 +34,10 @@ if (-not $SkipVerify) {
 }
 
 Get-ChildItem $From -File | ForEach-Object {
+  if ($_.Name -match '^repo--.+\.zip$') {
+    # the repo snapshot; this checkout already is the repo, so skip it here
+    return
+  }
   if ($_.Name -match '^(windows|linux|wsl)--(.+)$') {
     $dir, $name = $Matches[1], $Matches[2]
     $dest = if ($name -like 'claude-*') { Join-Path $dir 'claude-code' } else { $dir }

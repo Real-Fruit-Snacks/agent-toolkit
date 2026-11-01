@@ -47,6 +47,12 @@ Zip caches\claude-skills      'caches--claude-skills.zip'
 Zip caches\claude-code-docs   'caches--claude-code-docs.zip'
 Zip caches\pip-wheelhouse     'caches--pip-wheelhouse.zip'
 
+# the repo itself (tracked files at HEAD), so a machine with only the assets has the scripts and config
+Write-Host '  archiving repo'
+$repoZip = Join-Path $out "repo--agent-toolkit-$Tag.zip"
+git archive --format=zip --prefix=agent-toolkit/ -o $repoZip HEAD
+if ($LASTEXITCODE -ne 0) { throw 'git archive failed' }
+
 Get-ChildItem $out | ForEach-Object { "$($_.Name)`t$([math]::Round($_.Length/1MB)) MB" }
 Get-ChildItem $out -File | Get-FileHash -Algorithm SHA256 | ForEach-Object { "$($_.Hash.ToLower())  $(Split-Path -Leaf $_.Path)" } | Set-Content (Join-Path $out 'SHA256SUMS.txt')
 
@@ -54,4 +60,5 @@ Write-Host ''
 Write-Host 'To publish when ready (run yourself):'
 Write-Host "  gh release create $Tag --title `"$Tag`" --notes-file VERSIONS.md release\*"
 Write-Host ''
-Write-Host 'On the destination machine, scripts\unpack-release.ps1 puts the assets back into the folder layout.'
+Write-Host 'Tag the same commit you archived:  git tag -f $Tag; git push -f origin $Tag'
+Write-Host 'On the destination machine, extract repo--*.zip, then scripts\unpack-release.ps1 puts the assets back into the folder layout.'
