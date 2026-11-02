@@ -17,9 +17,10 @@ $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
 if (-not $Tag) { $Tag = gh release view --repo $Repo --json tagName -q .tagName }
 
-$assets = gh api "repos/$Repo/releases/tags/$Tag" -q '.assets[] | "\(.digest)|\(.name)|\(.size)"' | ForEach-Object {
-  $d, $n, $s = $_ -split '\|'
-  [pscustomobject]@{ name = $n; digest = ($d -replace '^sha256:', ''); size = [long]$s }
+# Parse the JSON in PowerShell; passing a jq string with inner quotes through Windows PowerShell 5.1 mangles it.
+$rel = gh api "repos/$Repo/releases/tags/$Tag" | ConvertFrom-Json
+$assets = $rel.assets | ForEach-Object {
+  [pscustomobject]@{ name = $_.name; digest = ("$($_.digest)" -replace '^sha256:', ''); size = [long]$_.size }
 }
 $sumsAsset = $assets | Where-Object name -eq 'SHA256SUMS.txt'
 if (-not $sumsAsset) { throw "SHA256SUMS.txt is not on release $Tag" }
