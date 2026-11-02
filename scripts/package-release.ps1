@@ -61,4 +61,6 @@ Write-Host 'To publish when ready (run yourself):'
 Write-Host "  gh release create $Tag --title `"$Tag`" --notes-file VERSIONS.md release\*"
 Write-Host ''
 Write-Host 'Tag the same commit you archived:  git tag -f $Tag; git push -f origin $Tag'
+Write-Host 'When replacing assets on an existing release, upload EVERY file with --clobber (never skip by size:'
+Write-Host 'Compress-Archive output is not byte-stable), then run scripts\verify-release.ps1 -Tag $Tag -Local.'
 Write-Host 'On the destination machine, extract repo--*.zip, then scripts\unpack-release.ps1 puts the assets back into the folder layout.'

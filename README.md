@@ -30,6 +30,7 @@ This installs T3 Code, the Claude Code CLI, Node, Git, the GitHub CLI, PowerShel
 | `scripts/package-release.ps1` | Bundles the folders into release assets and prints the publish command |
 | `scripts/download-release.ps1` | Fetches every asset of a release into one folder, with or without the GitHub CLI |
 | `scripts/unpack-release.ps1` | Verifies downloaded assets against SHA256SUMS.txt and restores the folder layout |
+| `scripts/verify-release.ps1` | Checks a published release's asset digests against its own SHA256SUMS.txt |
 
 Also in the release, restored by the install scripts:
 

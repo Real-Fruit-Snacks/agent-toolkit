@@ -27,13 +27,24 @@ if (Get-Command gh -ErrorAction SilentlyContinue) {
   $rel = Invoke-RestMethod $api -Headers @{ 'User-Agent' = 'agent-toolkit' }
   Write-Host "== $($rel.tag_name): $($rel.assets.Count) assets"
   $ProgressPreference = 'SilentlyContinue'
+  # GitHub publishes a sha256 digest per asset; an existing file is kept only if its hash matches,
+  # so a same-size stale or truncated download is always replaced.
   foreach ($a in $rel.assets) {
     $dest = Join-Path $To $a.name
-    if ((Test-Path $dest) -and ((Get-Item $dest).Length -eq $a.size)) { Write-Host "  have  $($a.name)"; continue }
+    $want = if ($a.digest) { ($a.digest -replace '^sha256:', '') } else { $null }
+    if (Test-Path $dest) {
+      $ok = if ($want) { (Get-FileHash $dest -Algorithm SHA256).Hash.ToLower() -eq $want } else { (Get-Item $dest).Length -eq $a.size }
+      if ($ok) { Write-Host "  have  $($a.name)"; continue }
+      Write-Host "  stale $($a.name), replacing"
+    }
     Write-Host "  get   $($a.name) ($([math]::Round($a.size/1MB)) MB)"
     for ($try = 1; $try -le 4; $try++) {
-      try { Invoke-WebRequest $a.browser_download_url -OutFile $dest -Headers @{ 'User-Agent' = 'agent-toolkit' }; break }
-      catch { if ($try -eq 4) { throw }; Write-Host "    retry $try"; Start-Sleep 10 }
+      try {
+        Invoke-WebRequest $a.browser_download_url -OutFile $dest -Headers @{ 'User-Agent' = 'agent-toolkit' }
+        if ($want -and ((Get-FileHash $dest -Algorithm SHA256).Hash.ToLower() -ne $want)) { throw "hash mismatch after download" }
+        break
+      }
+      catch { if ($try -eq 4) { throw }; Write-Host "    retry $try ($($_.Exception.Message))"; Start-Sleep 10 }
     }
   }
 }
