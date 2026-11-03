@@ -18,5 +18,8 @@ linux/claude-code/*
 !linux/claude-code/install.sh
 !wsl/ubuntu-noble-SHA256SUMS
 !caches/t3-userdata/
+!caches/pip-wheelhouse/
+caches/pip-wheelhouse/*
+!caches/pip-wheelhouse/requirements.txt
 release/
 *.log

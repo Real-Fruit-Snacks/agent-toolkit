@@ -17,8 +17,11 @@ $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
 if (-not $Tag) { $Tag = gh release view --repo $Repo --json tagName -q .tagName }
 
-# Parse the JSON in PowerShell; passing a jq string with inner quotes through Windows PowerShell 5.1 mangles it.
-$rel = gh api "repos/$Repo/releases/tags/$Tag" | ConvertFrom-Json
+# Look the release up from the list rather than /releases/tags/<tag>: that endpoint
+# cannot see drafts, whose git tag only exists once they are published.
+# Parse the JSON in PowerShell; a jq string with inner quotes gets mangled by Windows PowerShell 5.1.
+$rel = (gh api "repos/$Repo/releases?per_page=30" | ConvertFrom-Json) | Where-Object { $_.tag_name -eq $Tag } | Select-Object -First 1
+if (-not $rel) { throw "no release (draft or published) with tag $Tag" }
 $assets = $rel.assets | ForEach-Object {
   [pscustomobject]@{ name = $_.name; digest = ("$($_.digest)" -replace '^sha256:', ''); size = [long]$_.size }
 }

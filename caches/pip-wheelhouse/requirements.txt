@@ -1,0 +1,18 @@
+# Python packages used by the vendored Claude Code skills (docx, pdf, pptx, xlsx, canvas, mcp-builder, claude-api).
+pillow
+defusedxml
+imageio
+lxml
+numpy
+openpyxl
+pdf2image
+pdfplumber
+pypdf
+pyyaml
+python-docx
+python-pptx
+reportlab
+markdown
+anthropic
+mcp
+playwright

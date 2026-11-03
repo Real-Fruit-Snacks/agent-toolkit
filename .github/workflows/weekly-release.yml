@@ -24,7 +24,10 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  GH_TOKEN: ${{ github.token }}
+  # With a RELEASE_TOKEN secret (a fine-grained PAT with contents: write on this repo) the
+  # release and its tag are created by the token's owner. Without it, the release author is
+  # github-actions[bot]; commits are always made under the identity below.
+  GH_TOKEN: ${{ secrets.RELEASE_TOKEN || github.token }}
   GIT_AUTHOR_NAME: Real-Fruit-Snacks
   GIT_AUTHOR_EMAIL: 87195021+Real-Fruit-Snacks@users.noreply.github.com
   GIT_COMMITTER_NAME: Real-Fruit-Snacks
@@ -99,7 +102,10 @@ jobs:
           name: distro
           retention-days: 2
           compression-level: 0
-          path: wsl/ubuntu-dev.tar.gz
+          path: |
+            wsl/ubuntu-dev.tar.gz
+            caches/playwright-browsers-linux
+            caches/t3-tools-linux
 
   publish:
     name: package, verify, publish (windows)
@@ -111,7 +117,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with: { name: layout }
       - uses: actions/download-artifact@v4
-        with: { name: distro, path: wsl }
+        with: { name: distro }
 
       - name: smoke test binaries
         shell: pwsh

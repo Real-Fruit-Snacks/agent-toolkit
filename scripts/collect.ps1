@@ -42,7 +42,8 @@ Get-ChildItem windows -Filter 'T3-Code-*' | Remove-Item -Force
 Get-ChildItem windows -Filter 't3-*-win32-*' | Remove-Item -Force
 Get-ChildItem linux   -Filter 'T3-Code-*' | Remove-Item -Force
 Get-ChildItem linux   -Filter 't3-*-linux-*' | Remove-Item -Force
-gh release download $T3Tag -R pingdotgg/t3code -D windows -p 'T3-Code-*-x64.exe' -p 'T3-Code-*-x64.zip' -p 't3-*-win32-x64.zip' -p '*.yml' -p 'SHA256SUMS' --clobber
+Get-ChildItem windows -Filter '*.yml' | Remove-Item -Force
+gh release download $T3Tag -R pingdotgg/t3code -D windows -p 'T3-Code-*-x64.exe' -p 'T3-Code-*-x64.zip' -p 't3-*-win32-x64.zip' -p 'nightly.yml' -p 'latest.yml' -p 'SHA256SUMS' --clobber
 gh release download $T3Tag -R pingdotgg/t3code -D linux -p 'T3-Code-*-amd64.deb' -p 'T3-Code-*-x86_64.AppImage' -p 't3-*-linux-x64.tar.gz' --clobber
 
 # ---- Tool pins the T3 build expects (headless Chrome, agent-device, expo-device-hub) ----
@@ -181,6 +182,12 @@ Remove-Item caches\pip-wheelhouse\win, caches\pip-wheelhouse\linux -Recurse -For
 if ($LASTEXITCODE -ne 0) { throw 'pip download (win) failed' }
 & $pyExe @pyArgs -m pip download --quiet --disable-pip-version-check -d 'caches/pip-wheelhouse/linux' -r 'caches/pip-wheelhouse/requirements.txt' --platform manylinux2014_x86_64 --platform manylinux_2_17_x86_64 --platform manylinux_2_28_x86_64 --platform any --python-version 3.12 --only-binary=:all:
 if ($LASTEXITCODE -ne 0) { throw 'pip download (linux) failed' }
+
+foreach ($side in 'win','linux') {
+  $n = (Get-ChildItem "caches\pip-wheelhouse\$side" -File -ErrorAction SilentlyContinue | Measure-Object).Count
+  if ($n -lt 10) { throw "wheelhouse $side has only $n files; is caches\pip-wheelhouse\requirements.txt present?" }
+  Write-Host "  $side wheels: $n"
+}
 
 # ---- Playwright browsers (Windows) ----
 if (-not $SkipPlaywright) {

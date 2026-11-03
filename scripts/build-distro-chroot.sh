@@ -47,6 +47,17 @@ if find "$CH/home" "$CH/root" -maxdepth 3 \( -name '.credentials.json' -o -name 
   echo "credential-looking files found in the distro; aborting"; exit 1
 fi
 
+echo "== exporting Linux caches for standalone installs"
+# the provisioned distro already holds the Linux Playwright browsers and the installed T3 device
+# tools; copy them out so caches/ carries them for install-linux.sh and the release
+rm -rf "$ROOT/caches/playwright-browsers-linux"; mkdir -p "$ROOT/caches/playwright-browsers-linux"
+cp -a "$CH/home/$DEV_USER/.cache/ms-playwright/." "$ROOT/caches/playwright-browsers-linux/" 2>/dev/null || echo "warn: no Playwright browsers in the image"
+for t in agent-device expo-device-hub; do
+  rm -rf "$ROOT/caches/t3-tools-linux/$t"
+  [ -d "$CH/home/$DEV_USER/.t3/tools/$t" ] && cp -a "$CH/home/$DEV_USER/.t3/tools/$t" "$ROOT/caches/t3-tools-linux/$t"
+done
+chown -R "$(stat -c %u:%g "$ROOT")" "$ROOT/caches/playwright-browsers-linux" "$ROOT/caches/t3-tools-linux" 2>/dev/null || true
+
 echo "== packing $OUT"
 rm -f "$OUT"
 tar -C "$CH" --numeric-owner --xattrs -czf "$OUT" .
