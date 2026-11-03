@@ -22,7 +22,7 @@ Generated 2026-11-03 by scripts/write-versions.ps1.
 | GitHub CLI (deb) | 2.103.3 | `gh_2.103.3_linux_amd64.deb` | 14 | `e3bafef96328d1a67de3a968bdfe1cc2ffd58cf6aba8b5e201356897ed06bb3d` |
 | WSL platform | 3.0.3.0 | `wsl.3.0.3.0.x64.msi` | 351 | `ae977286974255bd26bf925f00f40f5692c6b2084155cbc0563c09aea091f211` |
 | Ubuntu WSL rootfs | noble | `ubuntu-noble-wsl-amd64-wsl.rootfs.tar.gz` | 340 | `8251e27ffff381a4af5f41dcb94d867de3e0d9774a9241908ab34555d99315ea` |
-| Baked distro export | ubuntu-dev | `ubuntu-dev.tar.gz` | 1245 | `cafd48036c2673a50e974f2dbe2fb17e7de2eff168687c76a73d907871a0ed93` |
+| Baked distro export | ubuntu-dev | `ubuntu-dev.tar.gz` | 1381 | `3ddfdb12446b3d256c64a470f6b05bc89bce1e6c6ca086f49c0eabf36cacf6ca` |
 | chrome-headless-shell (linux) | 156.0.8078.80 | `chrome-headless-shell-linux64-156.0.8078.80.zip` | 121 | `547dcd374e02961bf998f6046a267644f8502225c36bb78ca307dab32a0b3eb4` |
 
 ## T3 tool cache (caches/t3-tools-win)
