@@ -177,8 +177,9 @@ gh api 'repos/pingdotgg/t3code/git/trees/main?recursive=1' -q '.tree[] | select(
 # ---- Python wheelhouse ----
 Write-Host '== Python wheelhouse'
 Remove-Item caches\pip-wheelhouse\win, caches\pip-wheelhouse\linux -Recurse -Force -ErrorAction SilentlyContinue
-Invoke-Py -m pip download --quiet --disable-pip-version-check -d caches\pip-wheelhouse\win -r caches\pip-wheelhouse\requirements.txt
-Invoke-Py -m pip download --quiet --disable-pip-version-check -d caches\pip-wheelhouse\linux -r caches\pip-wheelhouse\requirements.txt --platform manylinux2014_x86_64 --platform manylinux_2_17_x86_64 --platform manylinux_2_28_x86_64 --platform any --python-version 3.12 --only-binary=:all:
+& $pyExe @pyArgs -m pip download --quiet --disable-pip-version-check -d 'caches/pip-wheelhouse/win' -r 'caches/pip-wheelhouse/requirements.txt'
+if ($LASTEXITCODE -ne 0) { throw 'pip download (win) failed' }
+& $pyExe @pyArgs -m pip download --quiet --disable-pip-version-check -d 'caches/pip-wheelhouse/linux' -r 'caches/pip-wheelhouse/requirements.txt' --platform manylinux2014_x86_64 --platform manylinux_2_17_x86_64 --platform manylinux_2_28_x86_64 --platform any --python-version 3.12 --only-binary=:all:
 if ($LASTEXITCODE -ne 0) { throw 'pip download (linux) failed' }
 
 # ---- Playwright browsers (Windows) ----
