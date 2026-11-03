@@ -31,8 +31,16 @@ foreach ($d in 'windows','linux','wsl','caches\npm','caches\t3-tools-win','cache
   New-Item -ItemType Directory -Force -Path (Join-Path $root $d) | Out-Null
 }
 # prefer the py launcher when present; call the executables by name so the helper can't recurse into itself
-$pyExe = if (Get-Command py.exe -ErrorAction SilentlyContinue) { 'py.exe' } else { 'python.exe' }
-$pyArgs = if ($pyExe -eq 'py.exe') { @('-3') } else { @() }
+# prefer the python on PATH (what actions/setup-python provides); the py launcher may pick a different, pip-less install
+# Windows ships a Store stub named python.exe that only prints an error, so pick the first candidate that actually runs.
+$pyExe = $null; $pyArgs = @()
+foreach ($cand in @(@('python.exe', @()), @('py.exe', @('-3')), @('python3.exe', @()))) {
+  if (-not (Get-Command $cand[0] -ErrorAction SilentlyContinue)) { continue }
+  $v = & $cand[0] @($cand[1]) --version 2>&1
+  if ($LASTEXITCODE -eq 0 -and "$v" -match '^Python 3\.') { $pyExe = $cand[0]; $pyArgs = $cand[1]; break }
+}
+if (-not $pyExe) { throw 'no working Python 3 on PATH' }
+Write-Host "  python: $pyExe $(& $pyExe @pyArgs --version 2>&1)  pip: $(& $pyExe @pyArgs -m pip --version 2>&1)"
 function Dl($url, $dest) { Write-Host "  $url"; curl.exe -fsSL --retry 3 -o $dest $url; if ($LASTEXITCODE -ne 0) { throw "download failed: $url" } }
 
 # ---- T3 Code ----
@@ -178,9 +186,9 @@ gh api 'repos/pingdotgg/t3code/git/trees/main?recursive=1' -q '.tree[] | select(
 # ---- Python wheelhouse ----
 Write-Host '== Python wheelhouse'
 Remove-Item caches\pip-wheelhouse\win, caches\pip-wheelhouse\linux -Recurse -Force -ErrorAction SilentlyContinue
-& $pyExe @pyArgs -m pip download --quiet --disable-pip-version-check -d 'caches/pip-wheelhouse/win' -r 'caches/pip-wheelhouse/requirements.txt'
+& $pyExe @pyArgs -m pip download --disable-pip-version-check --progress-bar off -d 'caches/pip-wheelhouse/win' -r 'caches/pip-wheelhouse/requirements.txt'
 if ($LASTEXITCODE -ne 0) { throw 'pip download (win) failed' }
-& $pyExe @pyArgs -m pip download --quiet --disable-pip-version-check -d 'caches/pip-wheelhouse/linux' -r 'caches/pip-wheelhouse/requirements.txt' --platform manylinux2014_x86_64 --platform manylinux_2_17_x86_64 --platform manylinux_2_28_x86_64 --platform any --python-version 3.12 --only-binary=:all:
+& $pyExe @pyArgs -m pip download --disable-pip-version-check --progress-bar off -d 'caches/pip-wheelhouse/linux' -r 'caches/pip-wheelhouse/requirements.txt' --platform manylinux2014_x86_64 --platform manylinux_2_17_x86_64 --platform manylinux_2_28_x86_64 --platform any --python-version 3.12 --only-binary=:all:
 if ($LASTEXITCODE -ne 0) { throw 'pip download (linux) failed' }
 
 foreach ($side in 'win','linux') {
