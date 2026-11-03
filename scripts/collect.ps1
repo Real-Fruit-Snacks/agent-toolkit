@@ -30,8 +30,9 @@ Set-Location $root
 foreach ($d in 'windows','linux','wsl','caches\npm','caches\t3-tools-win','caches\t3-tools-linux\chrome-headless-shell\linux64','caches\t3-userdata','caches\playwright-browsers','windows\claude-code','linux\claude-code','docs\reference\t3code','caches\claude-skills','caches\claude-code-docs','caches\pip-wheelhouse') {
   New-Item -ItemType Directory -Force -Path (Join-Path $root $d) | Out-Null
 }
-$python = if (Get-Command py -ErrorAction SilentlyContinue) { 'py -3' } else { 'python' }
-function Py { param([Parameter(ValueFromRemainingArguments)]$a) if ($python -eq 'py -3') { & py -3 @a } else { & python @a }; if ($LASTEXITCODE -ne 0) { throw "python failed: $a" } }
+# prefer the py launcher when present; call the executables by name so the helper can't recurse into itself
+$pyExe = if (Get-Command py.exe -ErrorAction SilentlyContinue) { 'py.exe' } else { 'python.exe' }
+function Invoke-Py { param([Parameter(ValueFromRemainingArguments)]$a) if ($pyExe -eq 'py.exe') { & py.exe -3 @a } else { & python.exe @a }; if ($LASTEXITCODE -ne 0) { throw "python failed: $a" } }
 function Dl($url, $dest) { Write-Host "  $url"; curl.exe -fsSL --retry 3 -o $dest $url; if ($LASTEXITCODE -ne 0) { throw "download failed: $url" } }
 
 # ---- T3 Code ----
@@ -176,8 +177,8 @@ gh api 'repos/pingdotgg/t3code/git/trees/main?recursive=1' -q '.tree[] | select(
 # ---- Python wheelhouse ----
 Write-Host '== Python wheelhouse'
 Remove-Item caches\pip-wheelhouse\win, caches\pip-wheelhouse\linux -Recurse -Force -ErrorAction SilentlyContinue
-Py -m pip download --quiet --disable-pip-version-check -d caches\pip-wheelhouse\win -r caches\pip-wheelhouse\requirements.txt
-Py -m pip download --quiet --disable-pip-version-check -d caches\pip-wheelhouse\linux -r caches\pip-wheelhouse\requirements.txt --platform manylinux2014_x86_64 --platform manylinux_2_17_x86_64 --platform manylinux_2_28_x86_64 --platform any --python-version 3.12 --only-binary=:all:
+Invoke-Py -m pip download --quiet --disable-pip-version-check -d caches\pip-wheelhouse\win -r caches\pip-wheelhouse\requirements.txt
+Invoke-Py -m pip download --quiet --disable-pip-version-check -d caches\pip-wheelhouse\linux -r caches\pip-wheelhouse\requirements.txt --platform manylinux2014_x86_64 --platform manylinux_2_17_x86_64 --platform manylinux_2_28_x86_64 --platform any --python-version 3.12 --only-binary=:all:
 
 # ---- Playwright browsers (Windows) ----
 if (-not $SkipPlaywright) {
