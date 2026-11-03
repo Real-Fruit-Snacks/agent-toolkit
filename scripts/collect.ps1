@@ -32,7 +32,7 @@ foreach ($d in 'windows','linux','wsl','caches\npm','caches\t3-tools-win','cache
 }
 # prefer the py launcher when present; call the executables by name so the helper can't recurse into itself
 $pyExe = if (Get-Command py.exe -ErrorAction SilentlyContinue) { 'py.exe' } else { 'python.exe' }
-function Invoke-Py { param([Parameter(ValueFromRemainingArguments)]$a) if ($pyExe -eq 'py.exe') { & py.exe -3 @a } else { & python.exe @a }; if ($LASTEXITCODE -ne 0) { throw "python failed: $a" } }
+$pyArgs = if ($pyExe -eq 'py.exe') { @('-3') } else { @() }
 function Dl($url, $dest) { Write-Host "  $url"; curl.exe -fsSL --retry 3 -o $dest $url; if ($LASTEXITCODE -ne 0) { throw "download failed: $url" } }
 
 # ---- T3 Code ----
@@ -179,6 +179,7 @@ Write-Host '== Python wheelhouse'
 Remove-Item caches\pip-wheelhouse\win, caches\pip-wheelhouse\linux -Recurse -Force -ErrorAction SilentlyContinue
 Invoke-Py -m pip download --quiet --disable-pip-version-check -d caches\pip-wheelhouse\win -r caches\pip-wheelhouse\requirements.txt
 Invoke-Py -m pip download --quiet --disable-pip-version-check -d caches\pip-wheelhouse\linux -r caches\pip-wheelhouse\requirements.txt --platform manylinux2014_x86_64 --platform manylinux_2_17_x86_64 --platform manylinux_2_28_x86_64 --platform any --python-version 3.12 --only-binary=:all:
+if ($LASTEXITCODE -ne 0) { throw 'pip download (linux) failed' }
 
 # ---- Playwright browsers (Windows) ----
 if (-not $SkipPlaywright) {
