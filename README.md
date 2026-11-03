@@ -39,6 +39,10 @@ Also in the release, restored by the install scripts:
 - Claude Code documentation as markdown, and the T3 Code user docs under `docs/reference/t3code`
 - Linux copies of the T3 tool cache and Playwright browsers for standalone Linux installs
 
+### Weekly builds
+
+A GitHub Actions workflow, `weekly-release.yml`, rebuilds everything every Sunday at 08:00 UTC and publishes the next patch version. A Windows runner collects the installers and caches, a Linux runner builds the Ubuntu distro in a chroot with `scripts/build-distro-chroot.sh`, and a Windows runner packages, uploads to a draft, verifies every asset by digest, and only then publishes. It can also be run by hand from the Actions tab with a pinned T3 tag or Claude Code version, or with publishing turned off to leave a draft for review.
+
 ## Tested on
 
 - Windows 11 Pro 26300 · Windows PowerShell 5.1 · the bake, collect, and pin checks run here

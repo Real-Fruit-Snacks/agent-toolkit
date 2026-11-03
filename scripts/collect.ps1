@@ -1,16 +1,21 @@
 <#
 .SYNOPSIS
   Refreshes the toolkit from a machine WITH internet. Downloads the latest T3 Code
-  nightly (or a pinned tag), Node, Git, gh, WSL, Ubuntu rootfs, Claude Code for
-  Windows and Linux, headless Chrome for Linux, Playwright browsers, and npm
-  tarballs. Copies this machine's warmed T3 tool cache. Writes VERSIONS.md.
+  nightly (or a pinned tag), Node, Git, gh, PowerShell 7, Python, WSL, the Ubuntu
+  rootfs, Claude Code for Windows and Linux, the T3 tool caches at the versions
+  the T3 build pins, Playwright browsers, a seeded npm cache, the public Claude
+  Code skills, offline docs and the Python wheelhouse. Writes VERSIONS.md.
 
-  Requires: gh (authenticated), curl, npm, npx.
+  Runs the same on a workstation or a GitHub Actions windows runner: nothing is
+  taken from the local ~/.t3 cache except, when present, the manifest snapshots.
 
-.PARAMETER T3Tag
-  Release tag to fetch. Default: newest release in pingdotgg/t3code (nightly).
-.PARAMETER ClaudeVersion
-  Claude Code version. Default: whatever downloads.claude.ai reports as "latest".
+  Requires: gh (authenticated), curl, git, node/npm/npx, python (3.11+) with pip.
+
+.PARAMETER T3Tag          Release tag to fetch. Default: newest release in pingdotgg/t3code (nightly).
+.PARAMETER ClaudeVersion  Claude Code version. Default: what downloads.claude.ai reports as "latest".
+.PARAMETER NodeMajor      Node major line to pin. Default 24.
+.PARAMETER SkipPlaywright Skip the Windows Playwright browser download.
+.PARAMETER SkipDistroSources Skip the WSL msi and Ubuntu rootfs (CI builds the distro elsewhere).
 #>
 [CmdletBinding()]
 param(
@@ -22,10 +27,11 @@ param(
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
 Set-Location $root
-foreach ($d in 'windows','linux','wsl','caches\npm','caches\t3-tools-win','caches\t3-tools-linux\chrome-headless-shell\linux64','caches\t3-userdata','caches\playwright-browsers','windows\claude-code','linux\claude-code') {
+foreach ($d in 'windows','linux','wsl','caches\npm','caches\t3-tools-win','caches\t3-tools-linux\chrome-headless-shell\linux64','caches\t3-userdata','caches\playwright-browsers','windows\claude-code','linux\claude-code','docs\reference\t3code','caches\claude-skills','caches\claude-code-docs','caches\pip-wheelhouse') {
   New-Item -ItemType Directory -Force -Path (Join-Path $root $d) | Out-Null
 }
-
+$python = if (Get-Command py -ErrorAction SilentlyContinue) { 'py -3' } else { 'python' }
+function Py { param([Parameter(ValueFromRemainingArguments)]$a) if ($python -eq 'py -3') { & py -3 @a } else { & python @a }; if ($LASTEXITCODE -ne 0) { throw "python failed: $a" } }
 function Dl($url, $dest) { Write-Host "  $url"; curl.exe -fsSL --retry 3 -o $dest $url; if ($LASTEXITCODE -ne 0) { throw "download failed: $url" } }
 
 # ---- T3 Code ----
@@ -37,6 +43,23 @@ Get-ChildItem linux   -Filter 'T3-Code-*' | Remove-Item -Force
 Get-ChildItem linux   -Filter 't3-*-linux-*' | Remove-Item -Force
 gh release download $T3Tag -R pingdotgg/t3code -D windows -p 'T3-Code-*-x64.exe' -p 'T3-Code-*-x64.zip' -p 't3-*-win32-x64.zip' -p '*.yml' -p 'SHA256SUMS' --clobber
 gh release download $T3Tag -R pingdotgg/t3code -D linux -p 'T3-Code-*-amd64.deb' -p 'T3-Code-*-x86_64.AppImage' -p 't3-*-linux-x64.tar.gz' --clobber
+
+# ---- Tool pins the T3 build expects (headless Chrome, agent-device, expo-device-hub) ----
+Write-Host '== Tool pins from the T3 bundle'
+& (Join-Path $PSScriptRoot 'check-pins.ps1') -Fix
+$adVer  = (Get-ChildItem caches\t3-tools-win\agent-device -Directory | Select-Object -First 1).Name
+$edhVer = (Get-ChildItem caches\t3-tools-win\expo-device-hub -Directory | Select-Object -First 1).Name
+$chsVer = (Get-ChildItem caches\t3-tools-win\chrome-headless-shell\win64 -Directory | Sort-Object Name -Descending | Select-Object -First 1).Name
+if (-not ($adVer -and $edhVer -and $chsVer)) { throw "tool pins incomplete: agent-device=$adVer expo-device-hub=$edhVer chrome=$chsVer" }
+if (-not (Get-ChildItem caches\t3-tools-linux\chrome-headless-shell\linux64 -Filter "*-$chsVer.zip" -ErrorAction SilentlyContinue)) {
+  Get-ChildItem caches\t3-tools-linux\chrome-headless-shell\linux64 -ErrorAction SilentlyContinue | Remove-Item -Force
+  Dl "https://storage.googleapis.com/chrome-for-testing-public/$chsVer/linux64/chrome-headless-shell-linux64.zip" "caches\t3-tools-linux\chrome-headless-shell\linux64\chrome-headless-shell-linux64-$chsVer.zip"
+}
+# manifest snapshots from a local T3 install, if there is one (optional)
+foreach ($f in 'model-manifest.json','usage-model-rates.json') {
+  $src = Join-Path $env:USERPROFILE ".t3\userdata\$f"
+  if (Test-Path $src) { Copy-Item $src caches\t3-userdata\ -Force }
+}
 
 # ---- Node ----
 $nodeIndex = (curl.exe -fsSL https://nodejs.org/dist/index.json | ConvertFrom-Json)
@@ -87,60 +110,48 @@ $base = 'https://downloads.claude.ai/claude-code-releases'
 if (-not $ClaudeVersion) { $ClaudeVersion = (curl.exe -fsSL "$base/latest").Trim() }
 Write-Host "== Claude Code $ClaudeVersion"
 Get-ChildItem windows\claude-code,linux\claude-code -Filter 'claude-*' | Remove-Item -Force
-Dl "$base/$ClaudeVersion/manifest.json"        "windows\claude-code\manifest.json"
-Dl "$base/$ClaudeVersion/win32-x64/claude.exe" "windows\claude-code\claude-$ClaudeVersion-win32-x64.exe"
-Dl "$base/$ClaudeVersion/linux-x64/claude"     "linux\claude-code\claude-$ClaudeVersion-linux-x64"
+Dl "$base/$ClaudeVersion/manifest.json"         "windows\claude-code\manifest.json"
+Dl "$base/$ClaudeVersion/win32-x64/claude.exe"  "windows\claude-code\claude-$ClaudeVersion-win32-x64.exe"
+Dl "$base/$ClaudeVersion/linux-x64/claude"      "linux\claude-code\claude-$ClaudeVersion-linux-x64"
 Dl "$base/$ClaudeVersion/linux-x64-musl/claude" "linux\claude-code\claude-$ClaudeVersion-linux-x64-musl"
 Dl 'https://claude.ai/install.ps1' 'windows\claude-code\install.ps1'
 Dl 'https://claude.ai/install.sh'  'linux\claude-code\install.sh'
 Set-Content windows\claude-code\VERSION $ClaudeVersion -NoNewline
 Copy-Item windows\claude-code\VERSION linux\claude-code\VERSION -Force
-
-# ---- T3 tool cache from this machine ----
-$t3tools = Join-Path $env:USERPROFILE '.t3\tools'
-Write-Host "== T3 tool cache from $t3tools"
-Remove-Item caches\t3-tools-win\* -Recurse -Force -ErrorAction SilentlyContinue
-foreach ($t in 'agent-device','chrome-headless-shell','expo-device-hub') {
-  if (Test-Path "$t3tools\$t") { Copy-Item "$t3tools\$t" "caches\t3-tools-win\$t" -Recurse -Force } else { Write-Warning "$t not in local cache; open the matching panel in T3 Code once and re-run" }
-}
-Copy-Item (Join-Path $env:USERPROFILE '.t3\userdata\model-manifest.json') caches\t3-userdata\ -Force -ErrorAction SilentlyContinue
-Copy-Item (Join-Path $env:USERPROFILE '.t3\userdata\usage-model-rates.json') caches\t3-userdata\ -Force -ErrorAction SilentlyContinue
-
-# Linux headless chrome matching the Windows cache version
-$chsVer = (Get-ChildItem "$t3tools\chrome-headless-shell\win64" -Directory | Sort-Object Name -Descending | Select-Object -First 1).Name
-if ($chsVer) {
-  Write-Host "== chrome-headless-shell linux64 $chsVer"
-  Get-ChildItem caches\t3-tools-linux\chrome-headless-shell\linux64 | Remove-Item -Force
-  Dl "https://storage.googleapis.com/chrome-for-testing-public/$chsVer/linux64/chrome-headless-shell-linux64.zip" "caches\t3-tools-linux\chrome-headless-shell\linux64\chrome-headless-shell-linux64-$chsVer.zip"
+# checksums from the vendor manifest
+$man = Get-Content windows\claude-code\manifest.json -Raw | ConvertFrom-Json
+foreach ($pair in @(@('win32-x64', "windows\claude-code\claude-$ClaudeVersion-win32-x64.exe"), @('linux-x64', "linux\claude-code\claude-$ClaudeVersion-linux-x64"), @('linux-x64-musl', "linux\claude-code\claude-$ClaudeVersion-linux-x64-musl"))) {
+  $want = $man.platforms.($pair[0]).checksum
+  $got = (Get-FileHash $pair[1] -Algorithm SHA256).Hash.ToLower()
+  if ($want -and $got -ne $want) { throw "Claude Code checksum mismatch for $($pair[0])" }
 }
 
-# ---- npm tarballs ----
-Write-Host '== npm tarballs'
-Push-Location caches\npm
-Get-ChildItem -Filter '*.tgz' | Remove-Item -Force
-$adVer  = (Get-ChildItem "$t3tools\agent-device" -Directory | Select-Object -First 1).Name
-$edhVer = (Get-ChildItem "$t3tools\expo-device-hub" -Directory | Select-Object -First 1).Name
-$pkgs = @('playwright@latest','@playwright/test@latest','@playwright/cli@latest')
-if ($adVer)  { $pkgs += "agent-device@$adVer" }
-if ($edhVer) { $pkgs += "expo-device-hub@$edhVer" }
-npm pack @pkgs | Out-Null
-Pop-Location
-
-# ---- Seeded npm cache, skills, docs, wheelhouse ----
-Write-Host '== npm cache seed'
-Remove-Item caches\npm-cache -Recurse -Force -ErrorAction SilentlyContinue
-$seed = Join-Path $env:TEMP 'npmseed'; Remove-Item $seed -Recurse -Force -ErrorAction SilentlyContinue; New-Item -ItemType Directory -Path $seed | Out-Null
-Push-Location $seed; npm init -y | Out-Null
-$skillPkgs = @()
-if (Test-Path "$root\caches\claude-skills") { $skillPkgs = (Get-ChildItem "$root\caches\claude-skills" -Recurse -Include *.md | Select-String -Pattern 'npm (install|i)( -g)? ([a-zA-Z0-9@/._ -]+)' -AllMatches).Matches | ForEach-Object { $_.Groups[3].Value -split ' ' } | Where-Object { $_ -match '^[a-z@]' } | Sort-Object -Unique }
-npm install --cache "$root\caches\npm-cache" --no-audit --no-fund @('playwright@latest','@playwright/test@latest','@playwright/cli@latest',"agent-device@$adVer","expo-device-hub@$edhVer") $skillPkgs | Out-Null
-Pop-Location
-Write-Host '== Claude Code skills (anthropics/skills)'
+# ---- Claude Code skills (anthropics/skills, Apache-2.0) ----
+Write-Host '== Claude Code skills'
 Remove-Item caches\claude-skills -Recurse -Force -ErrorAction SilentlyContinue
 $sk = Join-Path $env:TEMP 'askills'; Remove-Item $sk -Recurse -Force -ErrorAction SilentlyContinue
 git clone -q --depth 1 https://github.com/anthropics/skills.git $sk
 New-Item -ItemType Directory -Force -Path caches\claude-skills | Out-Null
 Copy-Item "$sk\skills\*" caches\claude-skills -Recurse -Force
+Get-ChildItem $sk -Filter 'LICENSE*' -File | Copy-Item -Destination caches\claude-skills -Force
+
+# ---- npm tarballs + seeded npm cache ----
+Write-Host '== npm tarballs'
+Push-Location caches\npm
+Get-ChildItem -Filter '*.tgz' | Remove-Item -Force
+npm pack @('playwright@latest','@playwright/test@latest','@playwright/cli@latest',"agent-device@$adVer","expo-device-hub@$edhVer") | Out-Null
+Pop-Location
+Write-Host '== npm cache seed'
+Remove-Item caches\npm-cache -Recurse -Force -ErrorAction SilentlyContinue
+$seed = Join-Path $env:TEMP 'npmseed'; Remove-Item $seed -Recurse -Force -ErrorAction SilentlyContinue; New-Item -ItemType Directory -Path $seed | Out-Null
+$skillPkgs = (Get-ChildItem caches\claude-skills -Recurse -Include *.md | Select-String -Pattern 'npm (install|i)( -g)?( -D)? ([a-zA-Z0-9@/._ -]+)' -AllMatches).Matches | ForEach-Object { $_.Groups[4].Value -split ' ' } | Where-Object { $_ -match '^[a-z@]' } | Sort-Object -Unique
+Push-Location $seed
+npm init -y | Out-Null
+npm install --cache "$root\caches\npm-cache" --no-audit --no-fund @('playwright@latest','@playwright/test@latest','@playwright/cli@latest',"agent-device@$adVer","expo-device-hub@$edhVer") @skillPkgs | Out-Null
+Pop-Location
+Set-Content caches\npm-cache\SKILL-PACKAGES.txt ($skillPkgs -join ' ')
+
+# ---- Claude Code docs ----
 Write-Host '== Claude Code docs'
 Remove-Item caches\claude-code-docs -Recurse -Force -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force -Path caches\claude-code-docs | Out-Null
@@ -151,28 +162,31 @@ Dl 'https://code.claude.com/docs/llms.txt' 'caches\claude-code-docs\llms.txt'
   New-Item -ItemType Directory -Force -Path (Split-Path $dst) | Out-Null
   curl.exe -fsSL --retry 2 -o $dst $_
 }
+
+# ---- T3 Code user docs (MIT) ----
 Write-Host '== T3 Code user docs'
-Remove-Item docseference	3code -Recurse -Force -ErrorAction SilentlyContinue
-New-Item -ItemType Directory -Force -Path docseference	3code | Out-Null
+$t3docs = Join-Path $root 'docs\reference\t3code'
+Get-ChildItem $t3docs -File -ErrorAction SilentlyContinue | Remove-Item -Force
 gh api 'repos/pingdotgg/t3code/git/trees/main?recursive=1' -q '.tree[] | select(.path|startswith("docs/user/")) | select(.type=="blob") | .path' | ForEach-Object {
-  gh api "repos/pingdotgg/t3code/contents/$_" -q .content | ForEach-Object { [IO.File]::WriteAllBytes((Join-Path 'docseference	3code' (Split-Path $_ -Leaf)), [Convert]::FromBase64String($_)) }
+  $leaf = Split-Path $_ -Leaf
+  $b64 = gh api "repos/pingdotgg/t3code/contents/$_" -q .content
+  [IO.File]::WriteAllBytes((Join-Path $t3docs $leaf), [Convert]::FromBase64String(($b64 -join '')))
 }
+
+# ---- Python wheelhouse ----
 Write-Host '== Python wheelhouse'
 Remove-Item caches\pip-wheelhouse\win, caches\pip-wheelhouse\linux -Recurse -Force -ErrorAction SilentlyContinue
-py -3 -m pip download --quiet -d caches\pip-wheelhouse\win -r caches\pip-wheelhouse\requirements.txt
-py -3 -m pip download --quiet -d caches\pip-wheelhouse\linux -r caches\pip-wheelhouse\requirements.txt --platform manylinux2014_x86_64 --platform manylinux_2_17_x86_64 --platform manylinux_2_28_x86_64 --platform any --python-version 3.12 --only-binary=:all:
+Py -m pip download --quiet --disable-pip-version-check -d caches\pip-wheelhouse\win -r caches\pip-wheelhouse\requirements.txt
+Py -m pip download --quiet --disable-pip-version-check -d caches\pip-wheelhouse\linux -r caches\pip-wheelhouse\requirements.txt --platform manylinux2014_x86_64 --platform manylinux_2_17_x86_64 --platform manylinux_2_28_x86_64 --platform any --python-version 3.12 --only-binary=:all:
 
-# ---- Playwright browsers ----
+# ---- Playwright browsers (Windows) ----
 if (-not $SkipPlaywright) {
   Write-Host '== Playwright browsers'
+  Remove-Item caches\playwright-browsers -Recurse -Force -ErrorAction SilentlyContinue
   $env:PLAYWRIGHT_BROWSERS_PATH = Join-Path $root 'caches\playwright-browsers'
   npx -y playwright@latest install chromium chromium-headless-shell | Out-Null
 }
 
-# ---- Reconcile tool pins with the downloaded T3 build ----
-Write-Host '== Checking tool pins against the T3 bundle'
-& (Join-Path $PSScriptRoot 'check-pins.ps1') -Fix
-
 # ---- VERSIONS.md ----
 & (Join-Path $PSScriptRoot 'write-versions.ps1')
-Write-Host 'Done. If the Claude Code version changed, re-run scripts\bake-wsl.ps1.'
+Write-Host 'Done. Build the distro next: scripts\bake-wsl.ps1 (WSL) or scripts\build-distro-chroot.sh (Linux/CI).'

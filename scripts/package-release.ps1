@@ -8,7 +8,10 @@
   2 GB, which nothing here approaches.
 #>
 [CmdletBinding()]
-param([string]$Tag)
+param(
+  [string]$Tag,
+  [switch]$Move    # move single-file assets instead of copying (CI runners have little disk)
+)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
 Set-Location $root
@@ -22,12 +25,13 @@ if (-not $Tag) {
 }
 
 # single-file assets, prefixed by folder so the release listing stays readable
+function Put($src, $dest) { if ($Move) { Move-Item $src $dest -Force } else { Copy-Item $src $dest -Force } }
 foreach ($dir in 'windows','linux','wsl') {
-  Get-ChildItem $dir -File | ForEach-Object { Copy-Item $_.FullName (Join-Path $out "$dir--$($_.Name)") }
+  Get-ChildItem $dir -File | ForEach-Object { Put $_.FullName (Join-Path $out "$dir--$($_.Name)") }
 }
 Get-ChildItem windows\claude-code,linux\claude-code -File | Where-Object { $_.Name -like 'claude-*' } | ForEach-Object {
   $side = if ($_.DirectoryName -like '*windows*') { 'windows' } else { 'linux' }
-  Copy-Item $_.FullName (Join-Path $out "$side--$($_.Name)")
+  Put $_.FullName (Join-Path $out "$side--$($_.Name)")
 }
 
 # zipped cache bundles

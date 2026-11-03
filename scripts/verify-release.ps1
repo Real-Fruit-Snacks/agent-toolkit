@@ -42,7 +42,7 @@ if ($Local) {
   Write-Host ''
   Write-Host '== local release\ folder vs published digests'
   foreach ($a in $assets) {
-    $p = Join-Path $root "release\$($a.name)"
+    $p = Join-Path (Join-Path $root 'release') $a.name
     if (-not (Test-Path $p)) { Write-Host "  no local      $($a.name)"; continue }
     $h = (Get-FileHash $p -Algorithm SHA256).Hash.ToLower()
     if ($h -ne $a.digest) { Write-Host "  LOCAL DIFF    $($a.name)"; $bad++ } else { Write-Host "  ok            $($a.name)" }
