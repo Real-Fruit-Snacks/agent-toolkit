@@ -94,7 +94,14 @@ Get-ChildItem windows -Filter 'PowerShell-*-win-x64.msi' | Remove-Item -Force
 gh release download $psTag -R PowerShell/PowerShell -D windows -p '*-win-x64.msi' --clobber
 
 # ---- Python ----
-$pyVer = ((curl.exe -fsSL https://www.python.org/ftp/python/) | Select-String -Pattern '3\.13\.\d+' -AllMatches).Matches.Value | Sort-Object { [version]$_ } -Unique | Select-Object -Last 1
+# newest 3.13.x that actually ships a Windows installer (late security-only releases are source-only)
+$pyCandidates = ((curl.exe -fsSL https://www.python.org/ftp/python/) | Select-String -Pattern '3\.13\.\d+' -AllMatches).Matches.Value | Sort-Object { [version]$_ } -Unique -Descending
+$pyVer = $null
+foreach ($c in $pyCandidates) {
+  curl.exe -fsSI -o NUL "https://www.python.org/ftp/python/$c/python-$c-amd64.exe" 2>$null
+  if ($LASTEXITCODE -eq 0) { $pyVer = $c; break }
+}
+if (-not $pyVer) { throw 'no Python 3.13 release with a Windows installer found' }
 Write-Host "== Python $pyVer"
 Get-ChildItem windows -Filter 'python-*-amd64.exe' | Remove-Item -Force
 Dl "https://www.python.org/ftp/python/$pyVer/python-$pyVer-amd64.exe" "windows\python-$pyVer-amd64.exe"
