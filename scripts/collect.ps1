@@ -143,14 +143,27 @@ foreach ($pair in @(@('win32-x64', "windows\claude-code\claude-$ClaudeVersion-wi
   if ($want -and $got -ne $want) { throw "Claude Code checksum mismatch for $($pair[0])" }
 }
 
-# ---- Claude Code skills (anthropics/skills, Apache-2.0) ----
+# ---- Claude Code skills (plain skill repos listed under "skills" in config/plugin-sources.json) ----
 Write-Host '== Claude Code skills'
 Remove-Item caches\claude-skills -Recurse -Force -ErrorAction SilentlyContinue
-$sk = Join-Path $env:TEMP 'askills'; Remove-Item $sk -Recurse -Force -ErrorAction SilentlyContinue
-git clone -q --depth 1 https://github.com/anthropics/skills.git $sk
 New-Item -ItemType Directory -Force -Path caches\claude-skills | Out-Null
-Copy-Item "$sk\skills\*" caches\claude-skills -Recurse -Force
-Get-ChildItem $sk -Filter 'LICENSE*' -File | Copy-Item -Destination caches\claude-skills -Force
+$sources = @()
+foreach ($src in (Get-Content (Join-Path $root 'config\plugin-sources.json') -Raw | ConvertFrom-Json).skills) {
+  $sk = Join-Path $env:TEMP ('skills-' + ($src.repo -replace '/', '-')); Remove-Item $sk -Recurse -Force -ErrorAction SilentlyContinue
+  git clone -q --depth 1 "https://github.com/$($src.repo).git" $sk
+  if ($LASTEXITCODE -ne 0) { throw "clone failed: $($src.repo)" }
+  $sha = (git -C $sk rev-parse --short HEAD).Trim()
+  $names = @()
+  foreach ($d in Get-ChildItem (Join-Path $sk $src.path) -Directory) {
+    if (Test-Path (Join-Path 'caches\claude-skills' $d.Name)) { throw "skill name clash: $($d.Name) from $($src.repo)" }
+    Copy-Item $d.FullName (Join-Path 'caches\claude-skills' $d.Name) -Recurse -Force
+    $names += $d.Name
+  }
+  Get-ChildItem $sk -Filter 'LICENSE*' -File | ForEach-Object { Copy-Item $_.FullName (Join-Path 'caches\claude-skills' ("$($_.BaseName)-$($src.repo -replace '/', '-')$($_.Extension)")) -Force }
+  $sources += "- $($src.repo) @ $sha ($($src.license)): $($names -join ', ')"
+  Write-Host "  $($src.repo): $($names.Count) skills"
+}
+Set-Content caches\claude-skills\SOURCES.md (@('# Skill sources', '') + $sources) -Encoding utf8
 
 # ---- npm tarballs + seeded npm cache ----
 Write-Host '== npm tarballs'
@@ -158,20 +171,44 @@ Push-Location caches\npm
 Get-ChildItem -Filter '*.tgz' | Remove-Item -Force
 npm pack @('playwright@latest','@playwright/test@latest','@playwright/cli@latest',"agent-device@$adVer","expo-device-hub@$edhVer") | Out-Null
 Pop-Location
-Write-Host '== npm cache seed'
-Remove-Item caches\npm-cache -Recurse -Force -ErrorAction SilentlyContinue
-$seed = Join-Path $env:TEMP 'npmseed'; Remove-Item $seed -Recurse -Force -ErrorAction SilentlyContinue; New-Item -ItemType Directory -Path $seed | Out-Null
-$skillPkgs = (Get-ChildItem caches\claude-skills -Recurse -Include *.md | Select-String -Pattern 'npm (install|i)( -g)?( -D)? ([a-zA-Z0-9@/._ -]+)' -AllMatches).Matches | ForEach-Object { $_.Groups[4].Value -split ' ' } | Where-Object { $_ -match '^[a-z@]' } | Sort-Object -Unique
+Write-Host '== npm cache seed (one install per package and platform, the way the target machines install them)'
+# A single project install dedupes to different versions than the isolated per-package global
+# installs the targets run, leaving tarballs uncached; and a Windows-only seed misses Linux
+# optional dependencies. So mirror the real installs, once for win and once for linux.
+$cacheDir = Join-Path $root 'caches\npm-cache'
+Remove-Item $cacheDir -Recurse -Force -ErrorAction SilentlyContinue
 $mcp = (Get-Content (Join-Path $root 'config\mcp-servers.json') -Raw | ConvertFrom-Json).servers
-$mcpNpm = @($mcp | Where-Object kind -eq 'npm' | ForEach-Object { "$($_.package)@latest" })
-$lspNpm = @((Get-Content (Join-Path $root 'config\plugin-sources.json') -Raw | ConvertFrom-Json).lsp.npm | ForEach-Object { "$_@latest" })
-$mcpNpm += $lspNpm
-Write-Host "  MCP + LSP npm packages: $($mcpNpm.Count)"
-Push-Location $seed
-npm init -y | Out-Null
-npm install --cache "$root\caches\npm-cache" --no-audit --no-fund @('playwright@latest','@playwright/test@latest','@playwright/cli@latest',"agent-device@$adVer","expo-device-hub@$edhVer") @skillPkgs @mcpNpm | Out-Null
-Pop-Location
-Set-Content caches\npm-cache\SKILL-PACKAGES.txt ($skillPkgs -join ' ')
+$lspNpm = @((Get-Content (Join-Path $root 'config\plugin-sources.json') -Raw | ConvertFrom-Json).lsp.npm)
+$globals = @($mcp | Where-Object kind -eq 'npm' | ForEach-Object package) + $lspNpm + @('playwright', '@playwright/cli', "agent-device@$adVer", "expo-device-hub@$edhVer")
+$platforms = @(@(), @('--os=linux', '--cpu=x64', '--libc=glibc'))
+$tmpRoot = Join-Path $env:TEMP 'npmseed'; Remove-Item $tmpRoot -Recurse -Force -ErrorAction SilentlyContinue; New-Item -ItemType Directory -Force -Path $tmpRoot | Out-Null
+$failed = @(); $i = 0
+foreach ($p in $globals) {
+  foreach ($plat in $platforms) {
+    $i++; $pre = Join-Path $tmpRoot "g$i"
+    npm install -g --prefix "$pre" --cache "$cacheDir" --no-audit --no-fund --ignore-scripts @plat $p 2>&1 | Out-Null
+    if ($LASTEXITCODE -ne 0) { $failed += "$p $($plat -join ' ')" }
+  }
+}
+# skills run `npm install ...` inside a project; seed each such command as its own project
+$skillCmds = @((Get-ChildItem caches\claude-skills -Recurse -Include *.md | Select-String -Pattern 'npm (?:install|i)((?: +[-@a-zA-Z0-9/._=^~]+)+)' -AllMatches).Matches | ForEach-Object { $_.Groups[1].Value.Trim() } | Sort-Object -Unique)
+foreach ($cmd in $skillCmds) {
+  $tokens = @($cmd -split '\s+' | Where-Object { $_ })
+  $pk = @($tokens | Where-Object { $_ -notmatch '^-' }); if (-not $pk) { continue }
+  $isGlobal = $tokens -contains '-g'
+  foreach ($plat in $platforms) {
+    $i++; $dir = Join-Path $tmpRoot "s$i"; New-Item -ItemType Directory -Force -Path $dir | Out-Null
+    Push-Location $dir
+    if ($isGlobal) { npm install -g --prefix "$dir" --cache "$cacheDir" --no-audit --no-fund --ignore-scripts @plat @pk 2>&1 | Out-Null }
+    else { npm init -y 2>&1 | Out-Null; npm install --cache "$cacheDir" --no-audit --no-fund --ignore-scripts @plat @pk 2>&1 | Out-Null }
+    if ($LASTEXITCODE -ne 0) { Write-Warning "  skill seed failed: npm install $cmd $($plat -join ' ')" }
+    Pop-Location
+  }
+}
+Remove-Item $tmpRoot -Recurse -Force -ErrorAction SilentlyContinue
+if ($failed) { throw "npm seed failed for: $($failed -join '; ')" }
+Set-Content caches\npm-cache\SKILL-PACKAGES.txt ($skillCmds -join "`n")
+Write-Host "  seeded $($globals.Count) global packages and $($skillCmds.Count) skill installs, for win and linux"
 
 # ---- Claude Code docs ----
 Write-Host '== Claude Code docs'

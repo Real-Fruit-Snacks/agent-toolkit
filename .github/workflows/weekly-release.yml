@@ -70,6 +70,7 @@ jobs:
           name: layout
           retention-days: 2
           compression-level: 0
+          include-hidden-files: true
           path: |
             windows
             linux
@@ -86,6 +87,17 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with: { name: layout }
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }   # Ubuntu noble's python3, so the wheels match the image
+      - name: complete the Linux wheelhouse natively
+        run: |
+          W=caches/pip-wheelhouse/linux; mkdir -p "$W"; before=$(ls "$W" | wc -l)
+          python -m pip install --quiet --upgrade pip wheel
+          python -m pip wheel --quiet --wheel-dir "$W" -r caches/pip-wheelhouse/requirements.txt || echo "::warning::skill wheel build had errors"
+          grep -vE '^\s*(#|$)' caches/pip-wheelhouse/requirements-mcp.txt | while read -r pkg; do
+            python -m pip wheel --quiet --wheel-dir "$W" "$pkg" >/tmp/wh.log 2>&1 || echo "::warning::no Linux wheel set for $pkg: $(tail -1 /tmp/wh.log)"
+          done
+          echo "linux wheelhouse: $before -> $(ls "$W" | wc -l) files"
       - name: build distro
         run: |
           chmod +x scripts/*.sh
@@ -95,6 +107,7 @@ jobs:
           mkdir -p /tmp/chk && sudo tar -xzf wsl/ubuntu-dev.tar.gz -C /tmp/chk
           sudo test -f /tmp/chk/etc/wsl.conf
           sudo test -d /tmp/chk/home/dev/.claude/skills/docx
+          sudo test -f /tmp/chk/home/dev/.claude/skills/full-send/SKILL.md
           sudo ls /tmp/chk/home/dev/.local/share/claude/versions/
           # what the provisioner registered, read from the image's own config
           sudo python3 - <<'PY'
@@ -124,10 +137,12 @@ jobs:
           name: distro
           retention-days: 2
           compression-level: 0
+          include-hidden-files: true
           path: |
             wsl/ubuntu-dev.tar.gz
             caches/playwright-browsers-linux
             caches/t3-tools-linux
+            caches/pip-wheelhouse/linux
 
   publish:
     name: package, verify, publish (windows)
@@ -191,6 +206,7 @@ jobs:
           if (-not (Test-Path (Join-Path $bin 'rust-analyzer.exe'))) { throw 'rust-analyzer not installed' }
 
           if (-not (Test-Path (Join-Path $env:USERPROFILE '.claude\skills\docx\SKILL.md'))) { throw 'skills not installed' }
+          if (-not (Test-Path (Join-Path $env:USERPROFILE '.claude\skills\full-send\SKILL.md'))) { throw 'tstack skills not installed' }
           if (-not (Test-Path (Join-Path $env:USERPROFILE 'agent-toolkit-docs\mcp-servers.md'))) { throw 'MCP catalog not written' }
 
       - name: next version

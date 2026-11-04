@@ -79,8 +79,10 @@ if (-not $SkipCaches) {
     Copy-Item (Join-Path $caches 'npm-cache\*') $npmCache -Recurse -Force
     $npm = Join-Path $env:ProgramFiles 'nodejs\npm.cmd'
     if (Test-Path $npm) {
-      & $npm install -g --offline --cache "$npmCache" --no-audit --no-fund playwright @playwright/cli agent-device expo-device-hub 2>$null
-      if ($LASTEXITCODE -ne 0) { Write-Warning 'global npm install from cache failed; T3 still works from its own tool cache' }
+      foreach ($pkg in 'playwright', '@playwright/cli', 'agent-device', 'expo-device-hub') {
+        & $npm install -g --offline --cache "$npmCache" --no-audit --no-fund $pkg 2>$null | Out-Null
+        if ($LASTEXITCODE -ne 0) { Write-Warning "global npm install of $pkg from the cache failed; T3 still works from its own tool cache" }
+      }
     }
   }
 

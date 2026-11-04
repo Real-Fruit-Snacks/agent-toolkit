@@ -30,8 +30,10 @@ $npmPkgs = $servers | Where-Object kind -eq 'npm' | Where-Object { -not $_.platf
 $installed = @{}
 if ($npm -and (Test-Path $npmCache)) {
   Write-Host "== npm MCP servers ($($npmPkgs.Count))"
-  & $npm.Source install -g --offline --cache "$npmCache" --no-audit --no-fund @npmPkgs 2>$null
-  if ($LASTEXITCODE -ne 0) { Write-Warning 'some npm MCP servers failed to install from the cache' }
+  foreach ($pkg in $npmPkgs) {   # one at a time, so one package that can't resolve offline doesn't block the rest
+    $out = & $npm.Source install -g --offline --cache "$npmCache" --no-audit --no-fund $pkg 2>&1
+    if ($LASTEXITCODE -ne 0) { Write-Warning "  npm install failed for $pkg : $(@($out | Select-String -Pattern 'npm error' | Select-Object -First 2) -join ' ')" }
+  }
   $gRoot = (& $npm.Source root -g).Trim()
   foreach ($s in ($servers | Where-Object kind -eq 'npm')) {
     $pj = Join-Path (Join-Path $gRoot $s.package) 'package.json'

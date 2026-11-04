@@ -93,8 +93,9 @@ def install_lsp():
     if args.skip_lsp_npm:
         print('  lsp npm     skipped (--skip-lsp-npm)')
     elif npm and cfg.get('npm') and os.path.isdir(cache):
-        p = subprocess.run([npm, 'install', '-g', '--offline', '--cache', cache, '--no-audit', '--no-fund'] + cfg['npm'], capture_output=True, text=True)
-        print(f"  lsp npm     {' '.join(cfg['npm'])}: {'ok' if p.returncode == 0 else 'FAILED: ' + (p.stderr or '')[-300:]}")
+        for pkg in cfg['npm']:  # one at a time, matching how the cache was seeded
+            p = subprocess.run([npm, 'install', '-g', '--offline', '--cache', cache, '--no-audit', '--no-fund', pkg], capture_output=True, text=True)
+            print(f"  lsp npm     {pkg}: {'ok' if p.returncode == 0 else 'FAILED: ' + (p.stderr or '')[-300:]}")
     else:
         print('  lsp npm     skipped (npm or the seeded npm cache is missing)')
     os.makedirs(LOCAL_BIN, exist_ok=True)

@@ -111,7 +111,9 @@ log "npm cache (offline installs)"
 if [ -d "$CACHES/npm-cache" ]; then
   install -d -o "$DEV_USER" -g "$DEV_USER" "$HOME_DIR/.npm-toolkit-cache"
   cp -r "$CACHES"/npm-cache/. "$HOME_DIR/.npm-toolkit-cache"/ && chown -R "$DEV_USER:$DEV_USER" "$HOME_DIR/.npm-toolkit-cache"
-  npm install -g --offline --cache "$HOME_DIR/.npm-toolkit-cache" --no-audit --no-fund playwright @playwright/cli >/dev/null 2>&1 || echo "warn: global playwright install from cache failed"
+  for pkg in playwright @playwright/cli; do
+    npm install -g --offline --cache "$HOME_DIR/.npm-toolkit-cache" --no-audit --no-fund "$pkg" >/dev/null 2>&1 || echo "warn: global $pkg install from cache failed"
+  done
 fi
 
 log "Claude Code skills"
@@ -135,7 +137,9 @@ if [ -f "$MCP_JSON" ] && command -v python3 >/dev/null 2>&1; then
   # npm servers (MCP + language servers for the LSP plugins) from the seeded cache, installed globally as root
   NPM_PKGS=$(python3 -c "import json,sys; m=json.load(open(sys.argv[1]))['servers']; l=json.load(open(sys.argv[2])).get('lsp',{}).get('npm',[]); print(' '.join([s['package'] for s in m if s['kind']=='npm' and ('linux' in s.get('platforms',['linux']))] + l))" "$MCP_JSON" "$ROOT/config/plugin-sources.json")
   if [ -d "$HOME_DIR/.npm-toolkit-cache" ] && [ -n "$NPM_PKGS" ]; then
-    npm install -g --offline --cache "$HOME_DIR/.npm-toolkit-cache" --no-audit --no-fund $NPM_PKGS >/dev/null 2>&1 || echo "warn: some npm MCP or LSP packages did not install from the cache"
+    for pkg in $NPM_PKGS; do   # one at a time, so one unresolvable package doesn't block the rest
+      npm install -g --offline --cache "$HOME_DIR/.npm-toolkit-cache" --no-audit --no-fund "$pkg" >/tmp/npm-mcp.log 2>&1         || echo "warn: npm $pkg did not install from the cache: $(grep -m1 -E 'npm error (code|request)' /tmp/npm-mcp.log)"
+    done
   fi
   # python servers: one venv per server under ~/.venv-mcp/<id>, since they pin conflicting dependency versions
   if [ -d "$CACHES/pip-wheelhouse/linux" ]; then
