@@ -1,0 +1,7 @@
+# Python MCP servers (installed into ~/.venv-mcp by the install scripts)
+mcp-server-git
+mcp-server-fetch
+mcp-server-time
+markitdown-mcp
+mcp-atlassian
+serena-agent

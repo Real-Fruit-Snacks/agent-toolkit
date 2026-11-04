@@ -95,10 +95,14 @@ if (-not $SkipCaches) {
   $wheels = Join-Path $caches 'pip-wheelhouse\win'
   if (Test-Path $wheels) {
     $req = Join-Path $caches 'pip-wheelhouse\requirements.txt'
-    $py = Get-ChildItem "$env:LOCALAPPDATA\Programs\Python\Python3*\python.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
+    $py = Get-ChildItem "$env:LOCALAPPDATA\Programs\Python\Python3*\python.exe" -ErrorAction SilentlyContinue | Sort-Object FullName -Descending | Select-Object -First 1
+    if (-not $py) { foreach ($c in 'python.exe','python3.exe') { $g = Get-Command $c -ErrorAction SilentlyContinue; if ($g) { $v = & $g.Source --version 2>&1; if ($LASTEXITCODE -eq 0 -and "$v" -match '^Python 3') { $py = Get-Item $g.Source; break } } } }
     if ($py) { & $py.FullName -m pip install --quiet --no-index --find-links "$wheels" -r $req; if ($LASTEXITCODE -ne 0) { Write-Warning 'pip install from wheelhouse had errors' } }
     else { Write-Warning 'python.exe not found; open a new terminal and run: pip install --no-index --find-links caches\pip-wheelhouse\win -r caches\pip-wheelhouse\requirements.txt' }
   }
+
+  Write-Host '== MCP servers'
+  & (Join-Path $PSScriptRoot 'install-mcp.ps1')
 
   Write-Host '== Placing offline docs'
   $docs = Join-Path $home_ 'agent-toolkit-docs'

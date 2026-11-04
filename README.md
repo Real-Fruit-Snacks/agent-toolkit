@@ -38,10 +38,11 @@ Also in the release, restored by the install scripts:
 - A seeded npm cache so `playwright`, `agent-device`, `expo-device-hub`, and the packages the skills call for install with `--offline`
 - Claude Code documentation as markdown, and the T3 Code user docs under `docs/reference/t3code`
 - Linux copies of the T3 tool cache and Playwright browsers for standalone Linux installs
+- MCP servers, listed in `config/mcp-servers.json`: Playwright, Chrome DevTools, filesystem, memory, sequential thinking, Desktop Commander, DBHub (Postgres, MySQL, SQL Server, SQLite), MongoDB, Kubernetes, GitLab, Task Master, mcp-remote and the MCP Inspector from npm; Git, Fetch, Time, MarkItDown, Atlassian and Serena from PyPI; and the official GitHub server as a binary. Six are registered in Claude Code by default; the rest are installed and one `claude mcp add` line away, listed in `~/agent-toolkit-docs/mcp-servers.md`
 
 ### Weekly builds
 
-A GitHub Actions workflow, `weekly-release.yml`, rebuilds everything every Sunday at 08:00 UTC and publishes the next patch version. A Windows runner collects the installers and caches, a Linux runner builds the Ubuntu distro in a chroot with `scripts/build-distro-chroot.sh`, and a Windows runner packages, uploads to a draft, verifies every asset by digest, and only then publishes. It can also be run by hand from the Actions tab with a pinned T3 tag or Claude Code version, or with publishing turned off to leave a draft for review.
+A GitHub Actions workflow, `weekly-release.yml`, rebuilds everything every Sunday at 08:00 UTC and publishes the next patch version. A Windows runner collects the installers and caches, a Linux runner builds the Ubuntu distro in a chroot, and the Windows publish job runs the install script on the clean runner as a smoke test with `scripts/build-distro-chroot.sh`, and a Windows runner packages, uploads to a draft, verifies every asset by digest, and only then publishes. It can also be run by hand from the Actions tab with a pinned T3 tag or Claude Code version, or with publishing turned off to leave a draft for review.
 
 ## Tested on
 
@@ -53,6 +54,7 @@ A GitHub Actions workflow, `weekly-release.yml`, rebuilds everything every Sunda
 
 - The app installers run with silent flags that are correct for the pinned versions; a newer installer may change them.
 - Restoring Playwright browsers into WSL relies on the baked distro. Importing the raw Ubuntu rootfs instead needs a network to fetch them.
+- Cloud-backed MCP servers (Context7, Brave, Firecrawl, Supabase, Notion, Slack and the like) are left out on purpose; they need the vendor's service.
 - T3 Code pins its on-demand tool versions per build. After bumping T3, run `scripts/check-pins.ps1 -Fix` or the cache will be ignored and a download attempted.
 
 ## Configuration

@@ -94,7 +94,7 @@ Get-ChildItem windows -Filter 'PowerShell-*-win-x64.msi' | Remove-Item -Force
 gh release download $psTag -R PowerShell/PowerShell -D windows -p '*-win-x64.msi' --clobber
 
 # ---- Python ----
-$pyVer = ((curl.exe -fsSL https://www.python.org/ftp/python/) | Select-String -Pattern '3\.14\.\d+' -AllMatches).Matches.Value | Sort-Object { [version]$_ } -Unique | Select-Object -Last 1
+$pyVer = ((curl.exe -fsSL https://www.python.org/ftp/python/) | Select-String -Pattern '3\.13\.\d+' -AllMatches).Matches.Value | Sort-Object { [version]$_ } -Unique | Select-Object -Last 1
 Write-Host "== Python $pyVer"
 Get-ChildItem windows -Filter 'python-*-amd64.exe' | Remove-Item -Force
 Dl "https://www.python.org/ftp/python/$pyVer/python-$pyVer-amd64.exe" "windows\python-$pyVer-amd64.exe"
@@ -155,9 +155,12 @@ Write-Host '== npm cache seed'
 Remove-Item caches\npm-cache -Recurse -Force -ErrorAction SilentlyContinue
 $seed = Join-Path $env:TEMP 'npmseed'; Remove-Item $seed -Recurse -Force -ErrorAction SilentlyContinue; New-Item -ItemType Directory -Path $seed | Out-Null
 $skillPkgs = (Get-ChildItem caches\claude-skills -Recurse -Include *.md | Select-String -Pattern 'npm (install|i)( -g)?( -D)? ([a-zA-Z0-9@/._ -]+)' -AllMatches).Matches | ForEach-Object { $_.Groups[4].Value -split ' ' } | Where-Object { $_ -match '^[a-z@]' } | Sort-Object -Unique
+$mcp = (Get-Content (Join-Path $root 'config\mcp-servers.json') -Raw | ConvertFrom-Json).servers
+$mcpNpm = @($mcp | Where-Object kind -eq 'npm' | ForEach-Object { "$($_.package)@latest" })
+Write-Host "  MCP npm servers: $($mcpNpm.Count)"
 Push-Location $seed
 npm init -y | Out-Null
-npm install --cache "$root\caches\npm-cache" --no-audit --no-fund @('playwright@latest','@playwright/test@latest','@playwright/cli@latest',"agent-device@$adVer","expo-device-hub@$edhVer") @skillPkgs | Out-Null
+npm install --cache "$root\caches\npm-cache" --no-audit --no-fund @('playwright@latest','@playwright/test@latest','@playwright/cli@latest',"agent-device@$adVer","expo-device-hub@$edhVer") @skillPkgs @mcpNpm | Out-Null
 Pop-Location
 Set-Content caches\npm-cache\SKILL-PACKAGES.txt ($skillPkgs -join ' ')
 
@@ -186,7 +189,7 @@ gh api 'repos/pingdotgg/t3code/git/trees/main?recursive=1' -q '.tree[] | select(
 # ---- Python wheelhouse ----
 Write-Host '== Python wheelhouse'
 Remove-Item caches\pip-wheelhouse\win, caches\pip-wheelhouse\linux -Recurse -Force -ErrorAction SilentlyContinue
-& $pyExe @pyArgs -m pip download --disable-pip-version-check --progress-bar off -d 'caches/pip-wheelhouse/win' -r 'caches/pip-wheelhouse/requirements.txt'
+& $pyExe @pyArgs -m pip download --disable-pip-version-check --progress-bar off -d 'caches/pip-wheelhouse/win' -r 'caches/pip-wheelhouse/requirements.txt' --python-version 3.13 --platform win_amd64 --platform any --only-binary=:all:
 if ($LASTEXITCODE -ne 0) { throw 'pip download (win) failed' }
 & $pyExe @pyArgs -m pip download --disable-pip-version-check --progress-bar off -d 'caches/pip-wheelhouse/linux' -r 'caches/pip-wheelhouse/requirements.txt' --platform manylinux2014_x86_64 --platform manylinux_2_17_x86_64 --platform manylinux_2_28_x86_64 --platform any --python-version 3.12 --only-binary=:all:
 if ($LASTEXITCODE -ne 0) { throw 'pip download (linux) failed' }
@@ -196,6 +199,21 @@ foreach ($side in 'win','linux') {
   if ($n -lt 10) { throw "wheelhouse $side has only $n files; is caches\pip-wheelhouse\requirements.txt present?" }
   Write-Host "  $side wheels: $n"
 }
+
+# ---- Python MCP servers wheelhouse (best effort: a package without a wheel for this Python is skipped, not fatal) ----
+Write-Host '== Python MCP servers wheelhouse'
+foreach ($side in @(@('win', @('--python-version','3.13','--platform','win_amd64','--platform','any')), @('linux', @('--platform','manylinux2014_x86_64','--platform','manylinux_2_17_x86_64','--platform','manylinux_2_28_x86_64','--platform','any','--python-version','3.12')))) {
+  foreach ($pkg in (Get-Content 'caches\pip-wheelhouseequirements-mcp.txt' | Where-Object { $_ -and $_ -notmatch '^\s*#' })) {
+    & $pyExe @pyArgs -m pip download --disable-pip-version-check --progress-bar off --only-binary=:all: -d "caches/pip-wheelhouse/$($side[0])" $pkg @($side[1]) 2>&1 | Select-String -Pattern 'ERROR' | ForEach-Object { Write-Warning "  $($side[0]) $pkg : no wheel ($_)" }
+  }
+}
+
+# ---- GitHub MCP server binaries ----
+$ghmTag = gh release view -R github/github-mcp-server --json tagName -q .tagName
+Write-Host "== github-mcp-server $ghmTag"
+foreach ($side in 'win','linux') { New-Item -ItemType Directory -Force -Path "caches\mcp-bin\$side" | Out-Null; Get-ChildItem "caches\mcp-bin\$side" | Remove-Item -Force }
+gh release download $ghmTag -R github/github-mcp-server -D caches\mcp-bin\win   -p 'github-mcp-server_Windows_x86_64.zip' --clobber
+gh release download $ghmTag -R github/github-mcp-server -D caches\mcp-bin\linux -p 'github-mcp-server_Linux_x86_64.tar.gz' --clobber
 
 # ---- Playwright browsers (Windows) ----
 if (-not $SkipPlaywright) {

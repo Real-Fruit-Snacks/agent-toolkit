@@ -45,7 +45,7 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: '24' }
       - uses: actions/setup-python@v5
-        with: { python-version: '3.14' }
+        with: { python-version: '3.13' }
 
       - name: collect
         shell: pwsh
@@ -129,6 +129,25 @@ jobs:
           $cc = Get-ChildItem windows\claude-code -Filter 'claude-*-win32-x64.exe' | Select-Object -First 1
           & $cc.FullName --version
           .\scripts\check-pins.ps1
+
+      - uses: actions/setup-node@v4
+        with: { node-version: '24' }
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.13' }
+      - name: install smoke test (caches, config, MCP servers on a clean machine)
+        shell: pwsh
+        run: |
+          .\scripts\install-windows.ps1 -SkipApps -SkipEnv
+          $claude = Join-Path $env:USERPROFILE '.local\bin\claude.exe'
+          if (-not (Test-Path $claude)) { throw 'claude.exe was not installed' }
+          $cfg = Get-Content (Join-Path $env:USERPROFILE '.claude.json') -Raw | ConvertFrom-Json
+          $n = @($cfg.mcpServers.PSObject.Properties).Count
+          Write-Host "registered MCP servers: $n -> $(@($cfg.mcpServers.PSObject.Properties.Name) -join ', ')"
+          if ($n -lt 4) { throw 'fewer than 4 default MCP servers registered' }
+          foreach ($p in $cfg.mcpServers.PSObject.Properties) { $cmd = $p.Value.command; $first = $p.Value.args[0]; if ($cmd -eq 'node' -and -not (Test-Path $first)) { throw "MCP $($p.Name): entry point missing: $first" } }
+          if (-not (Test-Path (Join-Path $env:USERPROFILE '.claude\skills\docx\SKILL.md'))) { throw 'skills not installed' }
+          if (-not (Test-Path (Join-Path $env:USERPROFILE 'agent-toolkit-docs\mcp-servers.md'))) { throw 'MCP catalog not written' }
+          & $claude --version
 
       - name: next version
         id: ver

@@ -42,6 +42,7 @@ $rows = @(
   (Row 'WSL platform'                (First wsl 'wsl.*.x64.msi') 'wsl\.([0-9.]+)\.x64'),
   (Row 'Ubuntu WSL rootfs'           (First wsl 'ubuntu-*-wsl-amd64-*.rootfs.tar.gz') 'ubuntu-([a-z]+)-wsl'),
   (Row 'Baked distro export'         (First wsl 'ubuntu-dev.tar.gz') '(ubuntu-dev)'),
+  (Row 'github-mcp-server (win)'      (First caches\mcp-bin\win 'github-mcp-server_Windows_x86_64.zip') '(github-mcp-server)'),
   (Row 'chrome-headless-shell (linux)' (First caches\t3-tools-linux\chrome-headless-shell\linux64 '*.zip') 'linux64-([0-9.]+)\.zip')
 ) | Where-Object { $_ }
 $lines += $rows
@@ -57,7 +58,8 @@ $lines += ''; $lines += '## Also in the release'; $lines += ''
 $lines += '- caches/npm-cache: seeded npm cache for offline installs of playwright, agent-device, expo-device-hub and the skill packages'
 $lines += '- caches/claude-skills: the public anthropics/skills set (Apache-2.0)'
 $lines += '- caches/claude-code-docs: Claude Code documentation, markdown, from code.claude.com/docs/llms.txt'
-$lines += '- caches/pip-wheelhouse: Python wheels for the document skills (win + linux)'
+$lines += '- caches/pip-wheelhouse: Python wheels for the document skills and the Python MCP servers (win + linux)'
+$lines += '- MCP servers (config/mcp-servers.json): npm ones in the npm cache, Python ones in the wheelhouse, github-mcp-server binaries in caches/mcp-bin'
 $lines += '- caches/playwright-browsers-linux and caches/t3-tools-linux: Linux browser and tool caches taken from the baked distro'
 $lines += '- docs/reference/t3code: T3 Code user docs (MIT), in the repo'
 $lines += ''; $lines += '## npm tarballs (caches/npm)'; $lines += ''

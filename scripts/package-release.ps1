@@ -50,6 +50,7 @@ Zip caches\npm-cache          'caches--npm-cache.zip'
 Zip caches\claude-skills      'caches--claude-skills.zip'
 Zip caches\claude-code-docs   'caches--claude-code-docs.zip'
 Zip caches\pip-wheelhouse     'caches--pip-wheelhouse.zip'
+Zip caches\mcp-bin            'caches--mcp-bin.zip'
 
 # the repo itself (tracked files at HEAD), so a machine with only the assets has the scripts and config
 Write-Host '  archiving repo'

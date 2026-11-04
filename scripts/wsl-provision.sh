@@ -129,6 +129,70 @@ if [ -d "$CACHES/pip-wheelhouse/linux" ]; then
   sudo -u "$DEV_USER" python3 -m venv "$HOME_DIR/.venv-skills" 2>/dev/null &&   sudo -u "$DEV_USER" "$HOME_DIR/.venv-skills/bin/pip" install --quiet --no-index --find-links "$CACHES/pip-wheelhouse/linux" -r "$CACHES/pip-wheelhouse/requirements.txt"     || echo "warn: wheelhouse install incomplete (python3-venv missing or a wheel absent); run it later"
 fi
 
+log "MCP servers"
+MCP_JSON="$ROOT/config/mcp-servers.json"
+if [ -f "$MCP_JSON" ] && command -v python3 >/dev/null 2>&1; then
+  # npm servers from the seeded cache
+  NPM_PKGS=$(python3 -c "import json,sys; print(' '.join(s['package'] for s in json.load(open(sys.argv[1]))['servers'] if s['kind']=='npm'))" "$MCP_JSON")
+  if [ -d "$HOME_DIR/.npm-toolkit-cache" ] && [ -n "$NPM_PKGS" ]; then
+    npm install -g --offline --cache "$HOME_DIR/.npm-toolkit-cache" --no-audit --no-fund $NPM_PKGS >/dev/null 2>&1 || echo "warn: some npm MCP servers did not install from the cache"
+  fi
+  # python servers into ~/.venv-mcp
+  if [ -d "$CACHES/pip-wheelhouse/linux" ] && [ -f "$CACHES/pip-wheelhouse/requirements-mcp.txt" ]; then
+    sudo -u "$DEV_USER" python3 -m venv "$HOME_DIR/.venv-mcp" 2>/dev/null && \
+    sudo -u "$DEV_USER" "$HOME_DIR/.venv-mcp/bin/pip" install --quiet --no-index --find-links "$CACHES/pip-wheelhouse/linux" -r "$CACHES/pip-wheelhouse/requirements-mcp.txt" \
+      || echo "warn: python MCP servers partially installed (missing wheel?)"
+  fi
+  # github-mcp-server binary
+  GHM=$(ls "$CACHES"/mcp-bin/linux/github-mcp-server_Linux_x86_64.tar.gz 2>/dev/null | head -1)
+  if [ -n "$GHM" ]; then
+    tar -xzf "$GHM" -C /tmp github-mcp-server 2>/dev/null && install -m 0755 -o "$DEV_USER" -g "$DEV_USER" /tmp/github-mcp-server "$HOME_DIR/.local/bin/github-mcp-server" && rm -f /tmp/github-mcp-server
+  fi
+  # register defaults + write the catalog (same logic as install-mcp.ps1, in python)
+  NPM_ROOT=$(npm root -g 2>/dev/null)
+  sudo -u "$DEV_USER" env HOME="$HOME_DIR" python3 - "$MCP_JSON" "$HOME_DIR" "$NPM_ROOT" <<'PY'
+import json, os, sys
+man, home, npm_root = sys.argv[1], sys.argv[2], sys.argv[3]
+servers = json.load(open(man))["servers"]
+def ex(v): return str(v).replace("${HOME}", home).replace("${CWD}", ".")
+installed = {}
+for s in servers:
+    if s["kind"] == "npm":
+        pj = os.path.join(npm_root, s["package"], "package.json")
+        if not os.path.exists(pj): continue
+        b = json.load(open(pj)).get("bin")
+        rel = b if isinstance(b, str) else (b.get(s["bin"]) or next(iter(b.values())))
+        installed[s["id"]] = {"command": "node", "args": [os.path.join(npm_root, s["package"], rel)] + [ex(a) for a in s.get("args", [])]}
+    elif s["kind"] == "pip":
+        exe = os.path.join(home, ".venv-mcp", "bin", s["bin"])
+        if os.path.exists(exe): installed[s["id"]] = {"command": exe, "args": [ex(a) for a in s.get("args", [])]}
+    elif s["kind"] == "bin":
+        exe = os.path.join(home, ".local", "bin", s["bin"])
+        if os.path.exists(exe): installed[s["id"]] = {"command": exe, "args": list(s.get("args", []))}
+cj = os.path.join(home, ".claude.json")
+cfg = json.load(open(cj)) if os.path.exists(cj) else {}
+cfg.setdefault("mcpServers", {})
+added = 0
+for s in servers:
+    if s["id"] not in installed or not s.get("default") or s["id"] in cfg["mcpServers"]: continue
+    e = {"type": "stdio", **installed[s["id"]]}
+    if s.get("env"): e["env"] = {k: ex(v) for k, v in s["env"].items()}
+    cfg["mcpServers"][s["id"]] = e; added += 1
+json.dump(cfg, open(cj, "w"), indent=2)
+os.makedirs(os.path.join(home, "agent-toolkit-docs"), exist_ok=True)
+lines = ["# Bundled MCP servers", "", "Installed by the toolkit. Default ones are already in your Claude Code user config. Add any other with the line shown, filling in placeholders.", ""]
+for s in servers:
+    if s["id"] not in installed: continue
+    i = installed[s["id"]]
+    envf = " ".join(f'-e {k}="{ex(v)}"' for k, v in (s.get("env") or {}).items())
+    cmd = f'claude mcp add -s user {envf} {s["id"]} -- "{i["command"]}" ' + " ".join(f'"{a}"' for a in i["args"])
+    lines += [f'## {s["id"]}' + (" (registered by default)" if s.get("default") else ""), "", s.get("note",""), "", "```", " ".join(cmd.split()), "```", ""]
+open(os.path.join(home, "agent-toolkit-docs", "mcp-servers.md"), "w").write("\n".join(lines))
+print(f"registered {added} default MCP server(s); {len(installed)} installed")
+PY
+  chown -R "$DEV_USER:$DEV_USER" "$HOME_DIR/.claude.json" "$HOME_DIR/agent-toolkit-docs" 2>/dev/null || true
+fi
+
 log "Claude Code config seed (no account data)"
 install -d -o "$DEV_USER" -g "$DEV_USER" "$HOME_DIR/.claude"
 if [ ! -f "$HOME_DIR/.claude.json" ]; then
