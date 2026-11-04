@@ -55,6 +55,7 @@ A GitHub Actions workflow, `weekly-release.yml`, rebuilds everything every Sunda
 
 ## Known issues
 
+- GitHub caps release assets below 2 GiB, so larger ones, currently the provisioned WSL distro, ship as `.part1`, `.part2` and so on, plus a `.sha256`. `unpack-release.ps1` joins and verifies them. On Linux without PowerShell: `cat name.part1 name.part2 > name`, then `sha256sum -c name.sha256`.
 - The app installers run with silent flags that are correct for the pinned versions; a newer installer may change them.
 - Restoring Playwright browsers into WSL relies on the baked distro. Importing the raw Ubuntu rootfs instead needs a network to fetch them.
 - Cloud-backed MCP servers (Context7, Brave, Firecrawl, Supabase, Notion, Slack and the like) are left out on purpose; they need the vendor's service.

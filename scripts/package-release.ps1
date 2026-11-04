@@ -4,8 +4,8 @@
   gh command to upload them. Does NOT create or push anything by itself.
 
   Folders with many files (caches) are zipped so the release has one asset per
-  logical unit. Single installers are copied as-is. GitHub caps each asset at
-  2 GB, which nothing here approaches.
+  logical unit. Single installers are copied as-is. GitHub caps each asset below
+  2 GiB, so anything larger is split into .partN files (see below).
 #>
 [CmdletBinding()]
 param(
@@ -59,6 +59,30 @@ Write-Host '  archiving repo'
 $repoZip = Join-Path $out "repo--agent-toolkit-$Tag.zip"
 git archive --format=zip --prefix=agent-toolkit/ -o $repoZip HEAD
 if ($LASTEXITCODE -ne 0) { throw 'git archive failed' }
+
+# GitHub rejects release assets of 2 GiB or more. Split anything at or above 1900 MiB into
+# <name>.part1, .part2, ... and add <name>.sha256 with the hash of the whole file, so
+# unpack-release.ps1 can rejoin the parts and check the result.
+$partSize = 1900MB
+foreach ($f in @(Get-ChildItem $out -File | Where-Object { $_.Length -ge $partSize })) {
+  Write-Host "  splitting $($f.Name) ($([math]::Round($f.Length/1MB)) MB)"
+  $whole = (Get-FileHash $f.FullName -Algorithm SHA256).Hash.ToLower()
+  Set-Content (Join-Path $out "$($f.Name).sha256") "$whole  $($f.Name)" -NoNewline
+  $in = [System.IO.File]::OpenRead($f.FullName)
+  try {
+    $buf = New-Object byte[] (8MB); $n = 0
+    while ($in.Position -lt $in.Length) {
+      $n++
+      $outFs = [System.IO.File]::Create((Join-Path $out "$($f.Name).part$n"))
+      try {
+        $written = 0L
+        while ($written -lt $partSize -and ($r = $in.Read($buf, 0, [int][math]::Min($buf.Length, $partSize - $written))) -gt 0) { $outFs.Write($buf, 0, $r); $written += $r }
+      } finally { $outFs.Dispose() }
+    }
+  } finally { $in.Dispose() }
+  Remove-Item $f.FullName -Force
+  Write-Host "    -> $n parts"
+}
 
 Get-ChildItem $out | ForEach-Object { "$($_.Name)`t$([math]::Round($_.Length/1MB)) MB" }
 Get-ChildItem $out -File | Get-FileHash -Algorithm SHA256 | ForEach-Object { "$($_.Hash.ToLower())  $(Split-Path -Leaf $_.Path)" } | Set-Content (Join-Path $out 'SHA256SUMS.txt')

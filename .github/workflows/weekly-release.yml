@@ -11,6 +11,9 @@ on:
       claude_version:
         description: Claude Code version (blank = latest)
         required: false
+      reuse_run_id:
+        description: Reuse the collect and distro artifacts of an earlier run id (skips the rebuild, publishes only)
+        required: false
       publish:
         description: Publish the release (false leaves it as a draft)
         type: boolean
@@ -18,6 +21,7 @@ on:
 
 permissions:
   contents: write
+  actions: read      # download artifacts from an earlier run when reuse_run_id is set
 
 concurrency:
   group: weekly-release
@@ -36,6 +40,7 @@ env:
 jobs:
   collect:
     name: collect (windows)
+    if: ${{ !inputs.reuse_run_id }}
     runs-on: windows-latest
     outputs:
       t3_tag: ${{ steps.vers.outputs.t3_tag }}
@@ -82,11 +87,15 @@ jobs:
   distro:
     name: distro (ubuntu chroot)
     needs: collect
+    if: ${{ !inputs.reuse_run_id }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
-        with: { name: layout }
+        with:
+          name: layout
+          run-id: ${{ inputs.reuse_run_id || github.run_id }}
+          github-token: ${{ github.token }}
       - uses: actions/setup-python@v5
         with: { python-version: '3.12' }   # Ubuntu noble's python3, so the wheels match the image
       - name: complete the Linux wheelhouse natively
@@ -147,14 +156,22 @@ jobs:
   publish:
     name: package, verify, publish (windows)
     needs: [collect, distro]
+    # runs after a successful build, or on its own when reusing an earlier run's artifacts
+    if: ${{ always() && (inputs.reuse_run_id || (needs.collect.result == 'success' && needs.distro.result == 'success')) }}
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
       - uses: actions/download-artifact@v4
-        with: { name: layout }
+        with:
+          name: layout
+          run-id: ${{ inputs.reuse_run_id || github.run_id }}
+          github-token: ${{ github.token }}
       - uses: actions/download-artifact@v4
-        with: { name: distro }
+        with:
+          name: distro
+          run-id: ${{ inputs.reuse_run_id || github.run_id }}
+          github-token: ${{ github.token }}
 
       - name: smoke test binaries
         shell: pwsh
@@ -213,7 +230,7 @@ jobs:
         id: ver
         shell: pwsh
         run: |
-          $last = gh release list --limit 1 --json tagName -q '.[0].tagName'
+          $last = gh release list --exclude-drafts --limit 1 --json tagName -q '.[0].tagName'
           if ($last -match '^v(\d+)\.(\d+)\.(\d+)$') { $next = "v$($Matches[1]).$($Matches[2]).$([int]$Matches[3] + 1)" } else { $next = 'v1.0.0' }
           "tag=$next" >> $env:GITHUB_OUTPUT
           Write-Host "last=$last next=$next"
@@ -224,7 +241,9 @@ jobs:
           .\scripts\write-versions.ps1
           git add VERSIONS.md docs/reference
           if (git diff --cached --quiet) { Write-Host 'no manifest changes' } else {
-            git commit -m "Weekly release ${{ steps.ver.outputs.tag }}: T3 ${{ needs.collect.outputs.t3_tag }}, Claude Code ${{ needs.collect.outputs.claude_version }}"
+            $t3 = (Get-ChildItem windows -Filter 'T3-Code-*-x64.exe' | Select-Object -First 1).Name -replace '^T3-Code-(.+)-x64\.exe$', '$1'
+          $cc = (Get-Content windows\claude-code\VERSION -Raw).Trim()
+          git commit -m "Weekly release ${{ steps.ver.outputs.tag }}: T3 $t3, Claude Code $cc"
             git push origin HEAD:main
           }
           git tag -f ${{ steps.ver.outputs.tag }}
@@ -255,6 +274,9 @@ jobs:
         shell: pwsh
         run: |
           $tag = '${{ steps.ver.outputs.tag }}'
+          $existing = gh release view $tag --json isDraft -q .isDraft 2>$null
+          if ($existing -eq 'true') { Write-Host "replacing earlier draft $tag"; gh release delete $tag --yes --cleanup-tag }
+          elseif ($existing -eq 'false') { throw "release $tag is already published" }
           gh release create $tag --draft --title $tag --notes-file release-notes.md
           Get-ChildItem release -File | ForEach-Object {
             $ok = $false

@@ -25,7 +25,8 @@ Start-Process msiexec.exe -Wait -ArgumentList @('/i', "`"$($msi.FullName)`"", '/
 
 wsl.exe --set-default-version 2 | Out-Null
 
-$baked = Get-ChildItem $wsl -Filter 'ubuntu-dev.tar*' | Select-Object -First 1
+$baked = @('ubuntu-dev.tar.gz', 'ubuntu-dev.tar') | ForEach-Object { Get-Item (Join-Path $wsl $_) -ErrorAction SilentlyContinue } | Select-Object -First 1
+if (-not $baked -and (Get-ChildItem $wsl -Filter 'ubuntu-dev.tar.gz.part*' -ErrorAction SilentlyContinue)) { throw 'wsl\ holds ubuntu-dev.tar.gz.part* pieces; run scripts\unpack-release.ps1 to join them first' }
 $rootfs = Get-ChildItem $wsl -Filter 'ubuntu-*-wsl-amd64-*.rootfs.tar.gz' | Select-Object -First 1
 $source = if ($baked) { $baked.FullName } elseif ($rootfs) { $rootfs.FullName } else { throw 'No distro tarball in wsl\' }
 $baked = $source

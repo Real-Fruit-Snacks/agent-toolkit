@@ -33,11 +33,31 @@ if (-not $SkipVerify) {
   Write-Host "Verified $checked file(s)."
 }
 
+# Rejoin assets that were split to stay under GitHub's 2 GiB limit: <name>.part1, .part2, ...
+$groups = Get-ChildItem $From -File | Where-Object { $_.Name -match '^(.+)\.part(\d+)$' } | Group-Object { $_.Name -replace '\.part\d+$', '' }
+foreach ($g in $groups) {
+  $parts = $g.Group | Sort-Object { [int]($_.Name -replace '^.+\.part', '') }
+  $nums = @($parts | ForEach-Object { [int]($_.Name -replace '^.+\.part', '') })
+  for ($k = 0; $k -lt $nums.Count; $k++) { if ($nums[$k] -ne $k + 1) { throw "$($g.Name): part $($k + 1) is missing. Download every .part file." } }
+  $target = Join-Path $From $g.Name
+  Write-Host "  joining  $($g.Name) from $($parts.Count) parts"
+  $outFs = [System.IO.File]::Create($target)
+  try { foreach ($p in $parts) { $in = [System.IO.File]::OpenRead($p.FullName); try { $in.CopyTo($outFs, 8MB) } finally { $in.Dispose() } } } finally { $outFs.Dispose() }
+  $side = Join-Path $From "$($g.Name).sha256"
+  if (Test-Path $side) {
+    $want = ((Get-Content $side -Raw).Trim() -split '\s+')[0].ToLower()
+    $got = (Get-FileHash $target -Algorithm SHA256).Hash.ToLower()
+    if ($got -ne $want) { Remove-Item $target -Force; throw "$($g.Name): joined file does not match its .sha256. Re-download the parts." }
+    Write-Host "  ok       $($g.Name) (joined)"
+  } elseif (-not $SkipVerify) { throw "$($g.Name).sha256 not found; download it to verify the joined file, or pass -SkipVerify." }
+}
+
 Get-ChildItem $From -File | ForEach-Object {
   if ($_.Name -match '^repo--.+\.zip$') {
     # the repo snapshot; this checkout already is the repo, so skip it here
     return
   }
+  if ($_.Name -match '\.part\d+$' -or $_.Name -match '\.sha256$') { return }   # pieces and sidecars of joined assets
   if ($_.Name -match '^(windows|linux|wsl)--(.+)$') {
     $dir, $name = $Matches[1], $Matches[2]
     $dest = if ($name -like 'claude-*') { Join-Path $dir 'claude-code' } else { $dir }
