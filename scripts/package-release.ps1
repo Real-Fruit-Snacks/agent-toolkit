@@ -51,6 +51,8 @@ Zip caches\claude-skills      'caches--claude-skills.zip'
 Zip caches\claude-code-docs   'caches--claude-code-docs.zip'
 Zip caches\pip-wheelhouse     'caches--pip-wheelhouse.zip'
 Zip caches\mcp-bin            'caches--mcp-bin.zip'
+Zip caches\lsp-bin            'caches--lsp-bin.zip'
+Zip caches\claude-plugins     'caches--claude-plugins.zip'
 
 # the repo itself (tracked files at HEAD), so a machine with only the assets has the scripts and config
 Write-Host '  archiving repo'

@@ -1,7 +1,16 @@
-# Python MCP servers (installed into ~/.venv-mcp by the install scripts)
+# Python MCP servers. Each is installed into its own venv under ~/.venv-mcp/<id>; versions resolve per server.
 mcp-server-git
 mcp-server-fetch
 mcp-server-time
 markitdown-mcp
 mcp-atlassian
 serena-agent
+redis-mcp-server
+mcp-server-motherduck
+office-word-mcp-server
+office-powerpoint-mcp-server
+excel-mcp-server
+jupyter-mcp-server
+prometheus-mcp-server
+mcp-server-docker
+semgrep

@@ -26,7 +26,7 @@ function Expand-Vars($s) { "$s" -replace '\$\{HOME\}', ($home_ -replace '\\', '/
 $npm = Get-Command npm.cmd -ErrorAction SilentlyContinue
 if (-not $npm) { $npm = Get-Command (Join-Path $env:ProgramFiles 'nodejs\npm.cmd') -ErrorAction SilentlyContinue }
 $npmCache = Join-Path $home_ '.npm-toolkit-cache'
-$npmPkgs = $servers | Where-Object kind -eq 'npm' | ForEach-Object package
+$npmPkgs = $servers | Where-Object kind -eq 'npm' | Where-Object { -not $_.platforms -or (@($_.platforms) -contains 'win') } | ForEach-Object package
 $installed = @{}
 if ($npm -and (Test-Path $npmCache)) {
   Write-Host "== npm MCP servers ($($npmPkgs.Count))"
@@ -52,23 +52,29 @@ $py = Get-ChildItem "$env:LOCALAPPDATA\Programs\Python\Python3*\python.exe" -Err
 if (-not $py) {  # fall back to a python on PATH that actually runs (Windows ships a Store stub named python.exe)
   foreach ($c in 'python.exe','python3.exe') { $g = Get-Command $c -ErrorAction SilentlyContinue; if ($g) { $v = & $g.Source --version 2>&1; if ($LASTEXITCODE -eq 0 -and "$v" -match '^Python 3') { $py = Get-Item $g.Source; break } } }
 }
-if ($py -and (Test-Path $wheels) -and (Test-Path $reqMcp)) {
-  Write-Host '== Python MCP servers -> ~\.venv-mcp'
-  if (-not (Test-Path (Join-Path $venv 'Scripts\python.exe'))) { & $py.FullName -m venv $venv }
-  & (Join-Path $venv 'Scripts\python.exe') -m pip install --quiet --no-index --find-links "$wheels" -r $reqMcp
-  if ($LASTEXITCODE -ne 0) { Write-Warning 'pip MCP install from the wheelhouse had errors (a package may lack a wheel for this Python)' }
-  foreach ($s in ($servers | Where-Object kind -eq 'pip')) {
-    $exe = Join-Path $venv "Scripts\$($s.bin).exe"
-    if (Test-Path $exe) { $installed[$s.id] = @{ command = $exe; args = @($s.args | ForEach-Object { Expand-Vars $_ }) }; Write-Host "  ok  $($s.id)" } else { Write-Warning "  missing: $($s.bin)" }
+function OnThisPlatform($s) { -not $s.platforms -or (@($s.platforms) -contains 'win') }
+if ($py -and (Test-Path $wheels)) {
+  # one venv per server: these tools pin conflicting versions of shared dependencies
+  Write-Host '== Python MCP servers -> ~\.venv-mcp\<id>'
+  New-Item -ItemType Directory -Force -Path $venv | Out-Null
+  foreach ($s in ($servers | Where-Object kind -eq 'pip' | Where-Object { OnThisPlatform $_ })) {
+    $sv = Join-Path $venv $s.id
+    $exe = Join-Path $sv "Scripts\$($s.bin).exe"
+    if (-not (Test-Path $exe)) {
+      if (-not (Test-Path (Join-Path $sv 'Scripts\python.exe'))) { & $py.FullName -m venv $sv }
+      & (Join-Path $sv 'Scripts\python.exe') -m pip install --quiet --disable-pip-version-check --no-index --find-links "$wheels" $s.package 2>$null
+    }
+    if (Test-Path $exe) { $installed[$s.id] = @{ command = $exe; args = @($s.args | ForEach-Object { Expand-Vars $_ }) }; Write-Host "  ok  $($s.id)" }
+    else { Write-Warning "  missing: $($s.id) ($($s.package) has no wheel for this Python in the wheelhouse)"; Remove-Item $sv -Recurse -Force -ErrorAction SilentlyContinue }
   }
-} else { Write-Warning 'Python, the wheelhouse or requirements-mcp.txt is missing; skipping pip MCP servers' }
+} else { Write-Warning 'Python or the wheelhouse is missing; skipping pip MCP servers' }
 
 # ---- bin ----
 $binDir = Join-Path $caches 'mcp-bin\win'
 $localBin = Join-Path $home_ '.local\bin'
 New-Item -ItemType Directory -Force -Path $localBin | Out-Null
-foreach ($s in ($servers | Where-Object kind -eq 'bin')) {
-  $zip = Get-ChildItem $binDir -Filter "$($s.bin)*.zip" -ErrorAction SilentlyContinue | Select-Object -First 1
+foreach ($s in ($servers | Where-Object kind -eq 'bin' | Where-Object { OnThisPlatform $_ })) {
+  $zip = Get-Item (Join-Path $binDir $s.asset_win) -ErrorAction SilentlyContinue
   if (-not $zip) { Write-Warning "  missing archive for $($s.id)"; continue }
   $tmp = Join-Path $env:TEMP "mcpbin-$($s.id)"; Remove-Item $tmp -Recurse -Force -ErrorAction SilentlyContinue
   Expand-Archive $zip.FullName -DestinationPath $tmp -Force

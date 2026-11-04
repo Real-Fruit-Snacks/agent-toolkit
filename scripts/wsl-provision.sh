@@ -132,22 +132,31 @@ fi
 log "MCP servers"
 MCP_JSON="$ROOT/config/mcp-servers.json"
 if [ -f "$MCP_JSON" ] && command -v python3 >/dev/null 2>&1; then
-  # npm servers from the seeded cache
-  NPM_PKGS=$(python3 -c "import json,sys; print(' '.join(s['package'] for s in json.load(open(sys.argv[1]))['servers'] if s['kind']=='npm'))" "$MCP_JSON")
+  # npm servers (MCP + language servers for the LSP plugins) from the seeded cache, installed globally as root
+  NPM_PKGS=$(python3 -c "import json,sys; m=json.load(open(sys.argv[1]))['servers']; l=json.load(open(sys.argv[2])).get('lsp',{}).get('npm',[]); print(' '.join([s['package'] for s in m if s['kind']=='npm' and ('linux' in s.get('platforms',['linux']))] + l))" "$MCP_JSON" "$ROOT/config/plugin-sources.json")
   if [ -d "$HOME_DIR/.npm-toolkit-cache" ] && [ -n "$NPM_PKGS" ]; then
-    npm install -g --offline --cache "$HOME_DIR/.npm-toolkit-cache" --no-audit --no-fund $NPM_PKGS >/dev/null 2>&1 || echo "warn: some npm MCP servers did not install from the cache"
+    npm install -g --offline --cache "$HOME_DIR/.npm-toolkit-cache" --no-audit --no-fund $NPM_PKGS >/dev/null 2>&1 || echo "warn: some npm MCP or LSP packages did not install from the cache"
   fi
-  # python servers into ~/.venv-mcp
-  if [ -d "$CACHES/pip-wheelhouse/linux" ] && [ -f "$CACHES/pip-wheelhouse/requirements-mcp.txt" ]; then
-    sudo -u "$DEV_USER" python3 -m venv "$HOME_DIR/.venv-mcp" 2>/dev/null && \
-    sudo -u "$DEV_USER" "$HOME_DIR/.venv-mcp/bin/pip" install --quiet --no-index --find-links "$CACHES/pip-wheelhouse/linux" -r "$CACHES/pip-wheelhouse/requirements-mcp.txt" \
-      || echo "warn: python MCP servers partially installed (missing wheel?)"
+  # python servers: one venv per server under ~/.venv-mcp/<id>, since they pin conflicting dependency versions
+  if [ -d "$CACHES/pip-wheelhouse/linux" ]; then
+    install -d -o "$DEV_USER" -g "$DEV_USER" "$HOME_DIR/.venv-mcp"
+    python3 -c "import json,sys; [print(s['id'], s['package'], s['bin']) for s in json.load(open(sys.argv[1]))['servers'] if s['kind']=='pip' and 'linux' in s.get('platforms',['linux'])]" "$MCP_JSON" | while read -r id pkg bin; do
+      V="$HOME_DIR/.venv-mcp/$id"
+      [ -x "$V/bin/$bin" ] && continue
+      sudo -u "$DEV_USER" python3 -m venv "$V" 2>/dev/null && \
+      sudo -u "$DEV_USER" "$V/bin/pip" install --quiet --disable-pip-version-check --no-index --find-links "$CACHES/pip-wheelhouse/linux" "$pkg" >/dev/null 2>&1 \
+        || { echo "warn: MCP $id ($pkg) has no complete wheel set for this Python; skipped"; rm -rf "$V"; }
+    done
   fi
-  # github-mcp-server binary
-  GHM=$(ls "$CACHES"/mcp-bin/linux/github-mcp-server_Linux_x86_64.tar.gz 2>/dev/null | head -1)
-  if [ -n "$GHM" ]; then
-    tar -xzf "$GHM" -C /tmp github-mcp-server 2>/dev/null && install -m 0755 -o "$DEV_USER" -g "$DEV_USER" /tmp/github-mcp-server "$HOME_DIR/.local/bin/github-mcp-server" && rm -f /tmp/github-mcp-server
-  fi
+  # release binaries (github-mcp-server, mcp-grafana, ...)
+  python3 -c "import json,sys; [print(s['bin'], s['asset_linux']) for s in json.load(open(sys.argv[1]))['servers'] if s['kind']=='bin' and s.get('asset_linux')]" "$MCP_JSON" | while read -r bin asset; do
+    A="$CACHES/mcp-bin/linux/$asset"
+    [ -f "$A" ] || { echo "warn: missing $asset"; continue; }
+    T=$(mktemp -d); tar -xzf "$A" -C "$T" 2>/dev/null
+    F=$(find "$T" -type f -name "$bin" | head -1)
+    [ -n "$F" ] && install -m 0755 -o "$DEV_USER" -g "$DEV_USER" "$F" "$HOME_DIR/.local/bin/$bin"
+    rm -rf "$T"
+  done
   # register defaults + write the catalog (same logic as install-mcp.ps1, in python)
   NPM_ROOT=$(npm root -g 2>/dev/null)
   sudo -u "$DEV_USER" env HOME="$HOME_DIR" python3 - "$MCP_JSON" "$HOME_DIR" "$NPM_ROOT" <<'PY'
@@ -164,7 +173,7 @@ for s in servers:
         rel = b if isinstance(b, str) else (b.get(s["bin"]) or next(iter(b.values())))
         installed[s["id"]] = {"command": "node", "args": [os.path.join(npm_root, s["package"], rel)] + [ex(a) for a in s.get("args", [])]}
     elif s["kind"] == "pip":
-        exe = os.path.join(home, ".venv-mcp", "bin", s["bin"])
+        exe = os.path.join(home, ".venv-mcp", s["id"], "bin", s["bin"])
         if os.path.exists(exe): installed[s["id"]] = {"command": exe, "args": [ex(a) for a in s.get("args", [])]}
     elif s["kind"] == "bin":
         exe = os.path.join(home, ".local", "bin", s["bin"])
@@ -193,15 +202,29 @@ PY
   chown -R "$DEV_USER:$DEV_USER" "$HOME_DIR/.claude.json" "$HOME_DIR/agent-toolkit-docs" 2>/dev/null || true
 fi
 
+log "Claude Code plugins (vendored marketplaces, offline)"
+if [ -f "$CACHES/claude-plugins/index.json" ]; then
+  sudo -u "$DEV_USER" env HOME="$HOME_DIR" PATH="$HOME_DIR/.local/bin:/opt/node/current/bin:/usr/local/bin:/usr/bin:/bin" \
+    DISABLE_AUTOUPDATER=1 CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1 \
+    python3 "$ROOT/scripts/install-plugins.py" --repo "$ROOT" --claude "$HOME_DIR/.local/bin/claude" --skip-lsp-npm \
+    || echo "warn: plugin install reported problems; run scripts/install-plugins.py again as $DEV_USER"
+fi
+
 log "Claude Code config seed (no account data)"
 install -d -o "$DEV_USER" -g "$DEV_USER" "$HOME_DIR/.claude"
-if [ ! -f "$HOME_DIR/.claude.json" ]; then
-  python3 - "$ROOT/config/claude-home/claude.json.example" "$HOME_DIR/.claude.json" <<'PY' 2>/dev/null || cp "$ROOT/config/claude-home/claude.json.example" "$HOME_DIR/.claude.json"
-import json,sys; d=json.load(open(sys.argv[1])); d.pop("$comment",None); json.dump(d,open(sys.argv[2],"w"),indent=2)
+# merge, don't skip: the MCP and plugin steps above may already have created these files
+sudo -u "$DEV_USER" python3 - "$ROOT/config/claude-home" "$HOME_DIR" <<'PY'
+import json, os, sys
+seeds, home = sys.argv[1], sys.argv[2]
+for seed, target in (("claude.json.example", os.path.join(home, ".claude.json")), ("settings.json.example", os.path.join(home, ".claude", "settings.json"))):
+    s = json.load(open(os.path.join(seeds, seed)))
+    cur = json.load(open(target)) if os.path.exists(target) else {}
+    for k, v in s.items():
+        if k != "$comment":
+            cur.setdefault(k, v)
+    os.makedirs(os.path.dirname(target), exist_ok=True)
+    json.dump(cur, open(target, "w"), indent=2)
 PY
-  chown "$DEV_USER:$DEV_USER" "$HOME_DIR/.claude.json"
-fi
-[ -f "$HOME_DIR/.claude/settings.json" ] || { cp "$ROOT/config/claude-home/settings.json.example" "$HOME_DIR/.claude/settings.json"; chown "$DEV_USER:$DEV_USER" "$HOME_DIR/.claude/settings.json"; }
 
 log "offline docs"
 install -d -o "$DEV_USER" -g "$DEV_USER" "$HOME_DIR/agent-toolkit-docs"

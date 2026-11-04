@@ -1,27 +1,412 @@
 {
-  "$comment": "MCP servers bundled by the toolkit. kind: npm (seeded into caches/npm-cache, installed globally), pip (caches/pip-wheelhouse, installed into ~/.venv-mcp), bin (caches/mcp-bin). default=true servers are registered in ~/.claude.json by the install scripts; the rest are installed and listed in ~/agent-toolkit-docs/mcp-servers.md with a ready 'claude mcp add' line. env values are placeholders for you to fill.",
+  "$comment": "MCP servers bundled by the toolkit. kind: npm (seeded into caches/npm-cache, installed globally), pip (caches/pip-wheelhouse, one venv per server under ~/.venv-mcp/<id>), bin (release binaries in caches/mcp-bin). 'platforms' limits a server to win or linux. default=true servers are registered in ~/.claude.json by the install scripts; the rest are installed and listed in ~/agent-toolkit-docs/mcp-servers.md with a ready 'claude mcp add' line. env values are placeholders for you to fill.",
   "servers": [
-    { "id": "playwright",          "kind": "npm", "package": "@playwright/mcp",                               "bin": "playwright-mcp",                 "default": true,  "args": ["--headless"], "note": "Browser automation. Uses the bundled Playwright Chromium." },
-    { "id": "chrome-devtools",     "kind": "npm", "package": "chrome-devtools-mcp",                           "bin": "chrome-devtools-mcp",            "default": false, "args": [], "note": "Google's Chrome DevTools MCP. Pass --executablePath to a Chrome or the Playwright Chromium if Chrome is absent." },
-    { "id": "filesystem",          "kind": "npm", "package": "@modelcontextprotocol/server-filesystem",       "bin": "mcp-server-filesystem",          "default": false, "args": ["${HOME}"], "note": "Official filesystem server. Claude Code's own tools cover this; useful for other MCP clients." },
-    { "id": "memory",              "kind": "npm", "package": "@modelcontextprotocol/server-memory",           "bin": "mcp-server-memory",              "default": true,  "args": [], "env": { "MEMORY_FILE_PATH": "${HOME}/.claude/mcp-memory.jsonl" }, "note": "Persistent knowledge graph across sessions." },
-    { "id": "sequential-thinking", "kind": "npm", "package": "@modelcontextprotocol/server-sequential-thinking", "bin": "mcp-server-sequential-thinking", "default": true,  "args": [], "note": "Structured step-by-step reasoning tool." },
-    { "id": "desktop-commander",   "kind": "npm", "package": "@wonderwhy-er/desktop-commander",               "bin": "desktop-commander",              "default": true,  "args": [], "note": "Persistent shells, REPLs and file ops." },
-    { "id": "dbhub",               "kind": "npm", "package": "@bytebase/dbhub",                               "bin": "dbhub",                          "default": false, "args": ["--transport", "stdio", "--dsn", "postgres://user:pass@host:5432/db"], "note": "One server for Postgres, MySQL, MariaDB, SQL Server and SQLite. Add --readonly for safety." },
-    { "id": "mongodb",             "kind": "npm", "package": "mongodb-mcp-server",                            "bin": "mongodb-mcp-server",             "default": false, "args": [], "env": { "MDB_MCP_CONNECTION_STRING": "mongodb://host:27017/db" }, "note": "Official MongoDB server." },
-    { "id": "kubernetes",          "kind": "npm", "package": "mcp-server-kubernetes",                         "bin": "mcp-server-kubernetes",          "default": false, "args": [], "note": "Uses the current kubeconfig context." },
-    { "id": "gitlab",              "kind": "npm", "package": "@zereight/mcp-gitlab",                          "bin": "mcp-gitlab",                     "default": false, "args": [], "env": { "GITLAB_API_URL": "https://gitlab.internal/api/v4", "GITLAB_PERSONAL_ACCESS_TOKEN": "<token>" }, "note": "Self-hosted GitLab works via GITLAB_API_URL." },
-    { "id": "task-master",         "kind": "npm", "package": "task-master-ai",                                "bin": "task-master-ai",                 "default": false, "args": [], "env": { "ANTHROPIC_API_KEY": "<key>", "ANTHROPIC_BASE_URL": "https://llm-gateway.internal/anthropic" }, "note": "PRD-to-tasks planner. Calls a model itself, so point it at the internal gateway." },
-    { "id": "mcp-remote",          "kind": "npm", "package": "mcp-remote",                                    "bin": "mcp-remote",                     "default": false, "args": ["https://mcp.internal/sse"], "note": "Bridge to any remote HTTP/SSE MCP server on the internal network." },
-    { "id": "inspector",           "kind": "npm", "package": "@modelcontextprotocol/inspector",               "bin": "mcp-inspector",                  "default": false, "args": [], "note": "Debugging UI for MCP servers; a dev tool, not a server to register." },
-
-    { "id": "git",        "kind": "pip", "package": "mcp-server-git",   "bin": "mcp-server-git",   "default": false, "args": ["--repository", "${CWD}"], "note": "Official Git server. Claude Code's Bash covers git; useful for other clients." },
-    { "id": "fetch",      "kind": "pip", "package": "mcp-server-fetch", "bin": "mcp-server-fetch", "default": true,  "args": [], "note": "Fetches URLs and converts to markdown. Works against internal sites." },
-    { "id": "time",       "kind": "pip", "package": "mcp-server-time",  "bin": "mcp-server-time",  "default": false, "args": [], "note": "Time and timezone conversions." },
-    { "id": "markitdown", "kind": "pip", "package": "markitdown-mcp",   "bin": "markitdown-mcp",   "default": true,  "args": [], "note": "Microsoft MarkItDown: PDF, Office, HTML and more to markdown." },
-    { "id": "atlassian",  "kind": "pip", "package": "mcp-atlassian",    "bin": "mcp-atlassian",    "default": false, "args": [], "env": { "JIRA_URL": "https://jira.internal", "JIRA_PERSONAL_TOKEN": "<token>", "CONFLUENCE_URL": "https://confluence.internal", "CONFLUENCE_PERSONAL_TOKEN": "<token>" }, "note": "Jira and Confluence, Server/Data Center supported." },
-    { "id": "serena",     "kind": "pip", "package": "serena-agent",     "bin": "serena",           "default": false, "args": ["start-mcp-server", "--context", "ide-assistant", "--project", "${CWD}"], "note": "Symbol-level code navigation and editing via language servers." },
-
-    { "id": "github", "kind": "bin", "package": "github/github-mcp-server", "bin": "github-mcp-server", "default": false, "args": ["stdio"], "env": { "GITHUB_PERSONAL_ACCESS_TOKEN": "<token>", "GITHUB_HOST": "https://github.internal" }, "note": "Official GitHub server as a static binary; set GITHUB_HOST for GitHub Enterprise." }
+    {
+      "id": "playwright",
+      "kind": "npm",
+      "package": "@playwright/mcp",
+      "bin": "playwright-mcp",
+      "default": true,
+      "args": [
+        "--headless"
+      ],
+      "note": "Browser automation. Uses the bundled Playwright Chromium."
+    },
+    {
+      "id": "chrome-devtools",
+      "kind": "npm",
+      "package": "chrome-devtools-mcp",
+      "bin": "chrome-devtools-mcp",
+      "default": false,
+      "args": [],
+      "note": "Google's Chrome DevTools MCP. Pass --executablePath to a Chrome or the Playwright Chromium if Chrome is absent."
+    },
+    {
+      "id": "filesystem",
+      "kind": "npm",
+      "package": "@modelcontextprotocol/server-filesystem",
+      "bin": "mcp-server-filesystem",
+      "default": false,
+      "args": [
+        "${HOME}"
+      ],
+      "note": "Official filesystem server. Claude Code's own tools cover this; useful for other MCP clients."
+    },
+    {
+      "id": "memory",
+      "kind": "npm",
+      "package": "@modelcontextprotocol/server-memory",
+      "bin": "mcp-server-memory",
+      "default": true,
+      "args": [],
+      "env": {
+        "MEMORY_FILE_PATH": "${HOME}/.claude/mcp-memory.jsonl"
+      },
+      "note": "Persistent knowledge graph across sessions."
+    },
+    {
+      "id": "sequential-thinking",
+      "kind": "npm",
+      "package": "@modelcontextprotocol/server-sequential-thinking",
+      "bin": "mcp-server-sequential-thinking",
+      "default": true,
+      "args": [],
+      "note": "Structured step-by-step reasoning tool."
+    },
+    {
+      "id": "desktop-commander",
+      "kind": "npm",
+      "package": "@wonderwhy-er/desktop-commander",
+      "bin": "desktop-commander",
+      "default": true,
+      "args": [],
+      "note": "Persistent shells, REPLs and file ops."
+    },
+    {
+      "id": "dbhub",
+      "kind": "npm",
+      "package": "@bytebase/dbhub",
+      "bin": "dbhub",
+      "default": false,
+      "args": [
+        "--transport",
+        "stdio",
+        "--dsn",
+        "postgres://user:pass@host:5432/db"
+      ],
+      "note": "One server for Postgres, MySQL, MariaDB, SQL Server and SQLite. Add --readonly for safety."
+    },
+    {
+      "id": "mongodb",
+      "kind": "npm",
+      "package": "mongodb-mcp-server",
+      "bin": "mongodb-mcp-server",
+      "default": false,
+      "args": [],
+      "env": {
+        "MDB_MCP_CONNECTION_STRING": "mongodb://host:27017/db"
+      },
+      "note": "Official MongoDB server."
+    },
+    {
+      "id": "kubernetes",
+      "kind": "npm",
+      "package": "mcp-server-kubernetes",
+      "bin": "mcp-server-kubernetes",
+      "default": false,
+      "args": [],
+      "note": "Uses the current kubeconfig context."
+    },
+    {
+      "id": "gitlab",
+      "kind": "npm",
+      "package": "@zereight/mcp-gitlab",
+      "bin": "mcp-gitlab",
+      "default": false,
+      "args": [],
+      "env": {
+        "GITLAB_API_URL": "https://gitlab.internal/api/v4",
+        "GITLAB_PERSONAL_ACCESS_TOKEN": "<token>"
+      },
+      "note": "Self-hosted GitLab works via GITLAB_API_URL."
+    },
+    {
+      "id": "task-master",
+      "kind": "npm",
+      "package": "task-master-ai",
+      "bin": "task-master-ai",
+      "default": false,
+      "args": [],
+      "env": {
+        "ANTHROPIC_API_KEY": "<key>",
+        "ANTHROPIC_BASE_URL": "https://llm-gateway.internal/anthropic"
+      },
+      "note": "PRD-to-tasks planner. Calls a model itself, so point it at the internal gateway."
+    },
+    {
+      "id": "mcp-remote",
+      "kind": "npm",
+      "package": "mcp-remote",
+      "bin": "mcp-remote",
+      "default": false,
+      "args": [
+        "https://mcp.internal/sse"
+      ],
+      "note": "Bridge to any remote HTTP/SSE MCP server on the internal network."
+    },
+    {
+      "id": "inspector",
+      "kind": "npm",
+      "package": "@modelcontextprotocol/inspector",
+      "bin": "mcp-inspector",
+      "default": false,
+      "args": [],
+      "note": "Debugging UI for MCP servers; a dev tool, not a server to register."
+    },
+    {
+      "id": "jetbrains",
+      "kind": "npm",
+      "package": "@jetbrains/mcp-proxy",
+      "bin": "mcp-jetbrains-proxy",
+      "default": false,
+      "args": [],
+      "note": "Bridges to a running JetBrains IDE's MCP server (IntelliJ, PyCharm, Rider, ...)."
+    },
+    {
+      "id": "nx",
+      "kind": "npm",
+      "package": "nx-mcp",
+      "bin": "nx-mcp",
+      "default": false,
+      "args": [
+        "${CWD}"
+      ],
+      "note": "Nx monorepo graph, projects and generators."
+    },
+    {
+      "id": "azure-devops",
+      "kind": "npm",
+      "package": "@azure-devops/mcp",
+      "bin": "mcp-server-azuredevops",
+      "default": false,
+      "args": [
+        "<organization>"
+      ],
+      "note": "Official Azure DevOps server: work items, repos, pipelines."
+    },
+    {
+      "id": "code-runner",
+      "kind": "npm",
+      "package": "mcp-server-code-runner",
+      "bin": "mcp-server-code-runner",
+      "default": false,
+      "args": [],
+      "note": "Runs snippets in installed interpreters (python, node, powershell, ...)."
+    },
+    {
+      "id": "sentry",
+      "kind": "npm",
+      "package": "@sentry/mcp-server",
+      "bin": "sentry-mcp",
+      "default": false,
+      "args": [
+        "--host=sentry.internal"
+      ],
+      "env": {
+        "SENTRY_ACCESS_TOKEN": "<token>"
+      },
+      "note": "Sentry issues and traces; --host points at a self-hosted Sentry."
+    },
+    {
+      "id": "pdf",
+      "kind": "npm",
+      "package": "@modelcontextprotocol/server-pdf",
+      "bin": "mcp-pdf-server",
+      "default": false,
+      "args": [],
+      "note": "Reads and searches PDF files."
+    },
+    {
+      "id": "git",
+      "kind": "pip",
+      "package": "mcp-server-git",
+      "bin": "mcp-server-git",
+      "default": false,
+      "args": [
+        "--repository",
+        "${CWD}"
+      ],
+      "note": "Official Git server. Claude Code's Bash covers git; useful for other clients."
+    },
+    {
+      "id": "fetch",
+      "kind": "pip",
+      "package": "mcp-server-fetch",
+      "bin": "mcp-server-fetch",
+      "default": true,
+      "args": [],
+      "note": "Fetches URLs and converts to markdown. Works against internal sites."
+    },
+    {
+      "id": "time",
+      "kind": "pip",
+      "package": "mcp-server-time",
+      "bin": "mcp-server-time",
+      "default": false,
+      "args": [],
+      "note": "Time and timezone conversions."
+    },
+    {
+      "id": "markitdown",
+      "kind": "pip",
+      "package": "markitdown-mcp",
+      "bin": "markitdown-mcp",
+      "default": true,
+      "args": [],
+      "note": "Microsoft MarkItDown: PDF, Office, HTML and more to markdown."
+    },
+    {
+      "id": "atlassian",
+      "kind": "pip",
+      "package": "mcp-atlassian",
+      "bin": "mcp-atlassian",
+      "default": false,
+      "args": [],
+      "env": {
+        "JIRA_URL": "https://jira.internal",
+        "JIRA_PERSONAL_TOKEN": "<token>",
+        "CONFLUENCE_URL": "https://confluence.internal",
+        "CONFLUENCE_PERSONAL_TOKEN": "<token>"
+      },
+      "note": "Jira and Confluence, Server/Data Center supported."
+    },
+    {
+      "id": "serena",
+      "kind": "pip",
+      "package": "serena-agent",
+      "bin": "serena",
+      "default": false,
+      "args": [
+        "start-mcp-server",
+        "--context",
+        "ide-assistant",
+        "--project",
+        "${CWD}"
+      ],
+      "note": "Symbol-level code navigation and editing via language servers."
+    },
+    {
+      "id": "redis",
+      "kind": "pip",
+      "package": "redis-mcp-server",
+      "bin": "redis-mcp-server",
+      "default": false,
+      "args": [
+        "--url",
+        "redis://localhost:6379/0"
+      ],
+      "note": "Official Redis server."
+    },
+    {
+      "id": "duckdb",
+      "kind": "pip",
+      "package": "mcp-server-motherduck",
+      "bin": "mcp-server-motherduck",
+      "default": false,
+      "args": [
+        "--db-path",
+        ":memory:"
+      ],
+      "note": "DuckDB SQL over local files (CSV, Parquet, JSON); --db-path a .duckdb file to persist."
+    },
+    {
+      "id": "word",
+      "kind": "pip",
+      "package": "office-word-mcp-server",
+      "bin": "word_mcp_server",
+      "default": false,
+      "args": [],
+      "note": "Create and edit .docx documents."
+    },
+    {
+      "id": "powerpoint",
+      "kind": "pip",
+      "package": "office-powerpoint-mcp-server",
+      "bin": "ppt_mcp_server",
+      "default": false,
+      "args": [],
+      "note": "Create and edit .pptx decks."
+    },
+    {
+      "id": "excel",
+      "kind": "pip",
+      "package": "excel-mcp-server",
+      "bin": "excel-mcp-server",
+      "default": false,
+      "args": [
+        "stdio"
+      ],
+      "note": "Read, write, chart and format .xlsx workbooks without Excel installed."
+    },
+    {
+      "id": "jupyter",
+      "kind": "pip",
+      "package": "jupyter-mcp-server",
+      "bin": "jupyter-mcp-server",
+      "default": false,
+      "args": [],
+      "env": {
+        "JUPYTER_URL": "http://localhost:8888",
+        "JUPYTER_TOKEN": "<token>"
+      },
+      "note": "Drives a running Jupyter server: cells, kernels, notebooks."
+    },
+    {
+      "id": "prometheus",
+      "kind": "pip",
+      "package": "prometheus-mcp-server",
+      "bin": "prometheus-mcp-server",
+      "default": false,
+      "args": [],
+      "env": {
+        "PROMETHEUS_URL": "http://prometheus.internal:9090"
+      },
+      "note": "PromQL queries against a Prometheus server."
+    },
+    {
+      "id": "docker",
+      "kind": "pip",
+      "package": "mcp-server-docker",
+      "bin": "mcp-server-docker",
+      "default": false,
+      "platforms": [
+        "win"
+      ],
+      "args": [],
+      "note": "Containers, images and compose via the local Docker engine. Windows only: its dependencies don't resolve on Ubuntu's Python 3.12."
+    },
+    {
+      "id": "semgrep",
+      "kind": "pip",
+      "package": "semgrep",
+      "bin": "semgrep",
+      "default": false,
+      "args": [
+        "mcp"
+      ],
+      "note": "Static analysis. Registry rule packs need a network; point it at local rules with --config."
+    },
+    {
+      "id": "github",
+      "kind": "bin",
+      "package": "github/github-mcp-server",
+      "bin": "github-mcp-server",
+      "default": false,
+      "args": [
+        "stdio"
+      ],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "<token>",
+        "GITHUB_HOST": "https://github.internal"
+      },
+      "note": "Official GitHub server as a static binary; set GITHUB_HOST for GitHub Enterprise.",
+      "asset_win": "github-mcp-server_Windows_x86_64.zip",
+      "asset_linux": "github-mcp-server_Linux_x86_64.tar.gz"
+    },
+    {
+      "id": "grafana",
+      "kind": "bin",
+      "package": "grafana/mcp-grafana",
+      "bin": "mcp-grafana",
+      "asset_win": "mcp-grafana_Windows_x86_64.zip",
+      "asset_linux": "mcp-grafana_Linux_x86_64.tar.gz",
+      "default": false,
+      "args": [],
+      "env": {
+        "GRAFANA_URL": "https://grafana.internal",
+        "GRAFANA_SERVICE_ACCOUNT_TOKEN": "<token>"
+      },
+      "note": "Official Grafana server: dashboards, Prometheus and Loki queries, alerts."
+    }
   ]
 }

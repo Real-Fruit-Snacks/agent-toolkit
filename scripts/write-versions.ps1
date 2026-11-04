@@ -43,6 +43,8 @@ $rows = @(
   (Row 'Ubuntu WSL rootfs'           (First wsl 'ubuntu-*-wsl-amd64-*.rootfs.tar.gz') 'ubuntu-([a-z]+)-wsl'),
   (Row 'Baked distro export'         (First wsl 'ubuntu-dev.tar.gz') '(ubuntu-dev)'),
   (Row 'github-mcp-server (win)'      (First caches\mcp-bin\win 'github-mcp-server_Windows_x86_64.zip') '(github-mcp-server)'),
+  (Row 'mcp-grafana (win)'            (First caches\mcp-bin\win 'mcp-grafana_Windows_x86_64.zip') '(mcp-grafana)'),
+  (Row 'rust-analyzer (win)'          (First caches\lsp-bin\win 'rust-analyzer-x86_64-pc-windows-msvc.zip') '(rust-analyzer)'),
   (Row 'chrome-headless-shell (linux)' (First caches\t3-tools-linux\chrome-headless-shell\linux64 '*.zip') 'linux64-([0-9.]+)\.zip')
 ) | Where-Object { $_ }
 $lines += $rows
@@ -62,6 +64,24 @@ $lines += '- caches/pip-wheelhouse: Python wheels for the document skills and th
 $lines += '- MCP servers (config/mcp-servers.json): npm ones in the npm cache, Python ones in the wheelhouse, github-mcp-server binaries in caches/mcp-bin'
 $lines += '- caches/playwright-browsers-linux and caches/t3-tools-linux: Linux browser and tool caches taken from the baked distro'
 $lines += '- docs/reference/t3code: T3 Code user docs (MIT), in the repo'
+
+$idxPath = Join-Path $root 'caches\claude-plugins\index.json'
+if (Test-Path $idxPath) {
+  $idx = (Get-Content $idxPath -Raw | ConvertFrom-Json).marketplaces
+  $lines += ''; $lines += '## Claude Code plugin marketplaces (caches/claude-plugins)'; $lines += ''
+  $lines += '| Marketplace | Upstream | Commit | Plugins | Enabled by default |'; $lines += '|---|---|---|---|---|'
+  foreach ($m in $idx) { $lines += "| ``$($m.name)`` | $($m.repo) | ``$("$($m.commit)".Substring(0,7))`` | $(@($m.plugins).Count) | $(if (@($m.enable).Count) { (@($m.enable) -join ', ') } else { '-' }) |" }
+}
+$mcpCfg = Join-Path $root 'config\mcp-servers.json'
+if (Test-Path $mcpCfg) {
+  $srv = (Get-Content $mcpCfg -Raw | ConvertFrom-Json).servers
+  $lines += ''; $lines += "## MCP servers ($(@($srv).Count))"; $lines += ''
+  foreach ($k in 'npm','pip','bin') {
+    $ids = @($srv | Where-Object kind -eq $k | ForEach-Object { if ($_.default) { "**$($_.id)**" } else { $_.id } })
+    if ($ids.Count) { $lines += "- $k`: $($ids -join ', ')" }
+  }
+  $lines += '- bold = registered in Claude Code by default'
+}
 $lines += ''; $lines += '## npm tarballs (caches/npm)'; $lines += ''
 foreach ($f in Get-ChildItem caches\npm -Filter '*.tgz' -ErrorAction SilentlyContinue) { $lines += "- $($f.Name)" }
 

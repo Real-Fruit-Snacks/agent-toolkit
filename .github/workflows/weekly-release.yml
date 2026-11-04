@@ -92,11 +92,33 @@ jobs:
           sudo -E bash scripts/build-distro-chroot.sh dev
       - name: smoke test inside the image
         run: |
-          mkdir -p /tmp/chk && sudo tar -xzf wsl/ubuntu-dev.tar.gz -C /tmp/chk ./home/dev/.local/bin/claude ./home/dev/.local/share/claude ./opt/node ./etc/wsl.conf ./home/dev/.claude/skills
-          sudo chroot /tmp/chk /bin/true 2>/dev/null || true
-          test -f /tmp/chk/etc/wsl.conf
-          test -d /tmp/chk/home/dev/.claude/skills/docx
-          ls /tmp/chk/home/dev/.local/share/claude/versions/
+          mkdir -p /tmp/chk && sudo tar -xzf wsl/ubuntu-dev.tar.gz -C /tmp/chk
+          sudo test -f /tmp/chk/etc/wsl.conf
+          sudo test -d /tmp/chk/home/dev/.claude/skills/docx
+          sudo ls /tmp/chk/home/dev/.local/share/claude/versions/
+          # what the provisioner registered, read from the image's own config
+          sudo python3 - <<'PY'
+          import json, os, sys
+          h = '/tmp/chk/home/dev'
+          cj = json.load(open(f'{h}/.claude.json'))
+          assert cj.get('hasCompletedOnboarding') is True, 'onboarding seed not merged'
+          mcp = sorted(cj.get('mcpServers', {}))
+          print('MCP servers registered:', len(mcp), mcp)
+          for want in ('playwright', 'memory', 'sequential-thinking', 'desktop-commander', 'fetch', 'markitdown'):
+              assert want in mcp, f'default MCP server missing: {want}'
+          venvs = sorted(os.listdir(f'{h}/.venv-mcp')) if os.path.isdir(f'{h}/.venv-mcp') else []
+          print('python MCP venvs:', len(venvs), venvs)
+          assert len(venvs) >= 10, 'too few Python MCP servers'
+          st = json.load(open(f'{h}/.claude/settings.json'))
+          en = sorted(k for k, v in st.get('enabledPlugins', {}).items() if v)
+          print('plugins enabled:', len(en), en)
+          assert len(en) >= 12, 'too few plugins enabled'
+          assert len(st.get('extraKnownMarketplaces', {})) >= 7 or os.path.isdir(f'{h}/.claude-toolkit/marketplaces'), 'marketplaces not registered'
+          for b in ('github-mcp-server', 'mcp-grafana', 'rust-analyzer'):
+              assert os.path.exists(f'{h}/.local/bin/{b}'), f'missing binary {b}'
+          print('image OK')
+          PY
+          sudo rm -rf /tmp/chk
       - uses: actions/upload-artifact@v4
         with:
           name: distro
@@ -134,20 +156,42 @@ jobs:
         with: { node-version: '24' }
       - uses: actions/setup-python@v5
         with: { python-version: '3.13' }
-      - name: install smoke test (caches, config, MCP servers on a clean machine)
+      - name: install smoke test (caches, config, MCP servers, plugins on a clean machine)
         shell: pwsh
         run: |
+          # -SkipApps skips the MSI/EXE installers, which also skips the claude.exe copy, so place it first
+          $bin = Join-Path $env:USERPROFILE '.local\bin'; New-Item -ItemType Directory -Force -Path $bin | Out-Null
+          Copy-Item (Get-ChildItem windows\claude-code -Filter 'claude-*-win32-x64.exe' | Select-Object -First 1).FullName (Join-Path $bin 'claude.exe') -Force
+          $env:DISABLE_AUTOUPDATER = '1'; $env:CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC = '1'
           .\scripts\install-windows.ps1 -SkipApps -SkipEnv
-          $claude = Join-Path $env:USERPROFILE '.local\bin\claude.exe'
-          if (-not (Test-Path $claude)) { throw 'claude.exe was not installed' }
+          $claude = Join-Path $bin 'claude.exe'
+          & $claude --version
+
           $cfg = Get-Content (Join-Path $env:USERPROFILE '.claude.json') -Raw | ConvertFrom-Json
-          $n = @($cfg.mcpServers.PSObject.Properties).Count
-          Write-Host "registered MCP servers: $n -> $(@($cfg.mcpServers.PSObject.Properties.Name) -join ', ')"
-          if ($n -lt 4) { throw 'fewer than 4 default MCP servers registered' }
-          foreach ($p in $cfg.mcpServers.PSObject.Properties) { $cmd = $p.Value.command; $first = $p.Value.args[0]; if ($cmd -eq 'node' -and -not (Test-Path $first)) { throw "MCP $($p.Name): entry point missing: $first" } }
+          if ($cfg.hasCompletedOnboarding -ne $true) { throw 'onboarding seed was not merged into .claude.json' }
+          $names = @($cfg.mcpServers.PSObject.Properties.Name)
+          Write-Host "registered MCP servers: $($names.Count) -> $($names -join ', ')"
+          foreach ($want in 'playwright','memory','sequential-thinking','desktop-commander','fetch','markitdown') { if ($names -notcontains $want) { throw "default MCP server not registered: $want" } }
+          foreach ($p in $cfg.mcpServers.PSObject.Properties) {
+            $cmd = $p.Value.command; $first = @($p.Value.args)[0]
+            if ($cmd -eq 'node') { if (-not (Test-Path $first)) { throw "MCP $($p.Name): entry point missing: $first" } }
+            elseif (-not (Test-Path $cmd)) { throw "MCP $($p.Name): command missing: $cmd" }
+          }
+          $venvs = @(Get-ChildItem (Join-Path $env:USERPROFILE '.venv-mcp') -Directory -ErrorAction SilentlyContinue).Count
+          Write-Host "python MCP venvs: $venvs"
+          if ($venvs -lt 10) { throw "only $venvs Python MCP servers installed" }
+
+          $plugins = & $claude plugin list --json | ConvertFrom-Json
+          $enabled = @($plugins | Where-Object enabled)
+          Write-Host "plugins enabled: $($enabled.Count) -> $(($enabled.id) -join ', ')"
+          $broken = @($plugins | Where-Object { $_.errors })
+          if ($broken) { throw "plugins with load errors: $(($broken | ForEach-Object { "$($_.id): $($_.errors)" }) -join '; ')" }
+          if ($enabled.Count -lt 12) { throw "only $($enabled.Count) plugins enabled" }
+          if (-not (Get-Command pyright-langserver -ErrorAction SilentlyContinue) -and -not (Test-Path (Join-Path $env:APPDATA 'npm\pyright-langserver.cmd'))) { throw 'pyright language server not installed' }
+          if (-not (Test-Path (Join-Path $bin 'rust-analyzer.exe'))) { throw 'rust-analyzer not installed' }
+
           if (-not (Test-Path (Join-Path $env:USERPROFILE '.claude\skills\docx\SKILL.md'))) { throw 'skills not installed' }
           if (-not (Test-Path (Join-Path $env:USERPROFILE 'agent-toolkit-docs\mcp-servers.md'))) { throw 'MCP catalog not written' }
-          & $claude --version
 
       - name: next version
         id: ver

@@ -104,6 +104,15 @@ if (-not $SkipCaches) {
   Write-Host '== MCP servers'
   & (Join-Path $PSScriptRoot 'install-mcp.ps1')
 
+  Write-Host '== Claude Code plugin marketplaces and language servers'
+  $claudeExe = Join-Path $home_ '.local\bin\claude.exe'
+  $pyP = Get-ChildItem "$env:LOCALAPPDATA\Programs\Python\Python3*\python.exe" -ErrorAction SilentlyContinue | Sort-Object FullName -Descending | Select-Object -First 1
+  if (-not $pyP) { foreach ($c in 'python.exe','python3.exe') { $g = Get-Command $c -ErrorAction SilentlyContinue; if ($g) { $v = & $g.Source --version 2>&1; if ($LASTEXITCODE -eq 0 -and "$v" -match '^Python 3') { $pyP = Get-Item $g.Source; break } } } }
+  if ($pyP -and (Test-Path $claudeExe) -and (Test-Path (Join-Path $caches 'claude-plugins\index.json'))) {
+    & $pyP.FullName (Join-Path $PSScriptRoot 'install-plugins.py') --repo $root --claude $claudeExe
+    if ($LASTEXITCODE -ne 0) { Write-Warning 'plugin install reported problems; re-run: python scripts\install-plugins.py' }
+  } else { Write-Warning 'skipping plugins: needs Python, the Claude Code CLI, and caches\claude-plugins' }
+
   Write-Host '== Placing offline docs'
   $docs = Join-Path $home_ 'agent-toolkit-docs'
   New-Item -ItemType Directory -Force -Path $docs | Out-Null
@@ -121,17 +130,22 @@ if (-not $SkipConfig) {
   }
 
   Write-Host '== Seeding Claude Code config (skips onboarding; no account data)'
-  $cfgDir = if ($env:CLAUDE_CONFIG_DIR) { $env:CLAUDE_CONFIG_DIR } else { Join-Path $home_ '.claude' }
-  New-Item -ItemType Directory -Force -Path $cfgDir | Out-Null
-  $cj = Join-Path (Split-Path $cfgDir -Parent) '.claude.json'
-  if ($env:CLAUDE_CONFIG_DIR) { $cj = Join-Path $cfgDir '.claude.json' }
-  if (-not (Test-Path $cj)) {
-    $seed = Get-Content (Join-Path $config 'claude-home\claude.json.example') -Raw | ConvertFrom-Json
-    $seed.PSObject.Properties.Remove('$comment')
-    $seed | ConvertTo-Json -Depth 5 | Set-Content $cj -Encoding utf8
+  # Merge, don't skip: the MCP and plugin steps may already have created these files,
+  # so add each seed key that is missing and leave existing values alone.
+  function Merge-Seed($path, $seedFile) {
+    $seed = Get-Content $seedFile -Raw | ConvertFrom-Json
+    $cur = if (Test-Path $path) { Get-Content $path -Raw | ConvertFrom-Json } else { [pscustomobject]@{} }
+    foreach ($p in $seed.PSObject.Properties) {
+      if ($p.Name -eq '$comment') { continue }
+      if (-not $cur.PSObject.Properties[$p.Name]) { $cur | Add-Member -NotePropertyName $p.Name -NotePropertyValue $p.Value }
+    }
+    New-Item -ItemType Directory -Force -Path (Split-Path $path) | Out-Null
+    $cur | ConvertTo-Json -Depth 20 | Set-Content $path -Encoding utf8
   }
-  $sj = Join-Path $cfgDir 'settings.json'
-  if (-not (Test-Path $sj)) { Copy-Item (Join-Path $config 'claude-home\settings.json.example') $sj }
+  $cfgDir = if ($env:CLAUDE_CONFIG_DIR) { $env:CLAUDE_CONFIG_DIR } else { Join-Path $home_ '.claude' }
+  $cj = if ($env:CLAUDE_CONFIG_DIR) { Join-Path $cfgDir '.claude.json' } else { Join-Path $home_ '.claude.json' }
+  Merge-Seed $cj (Join-Path $config 'claude-home\claude.json.example')
+  Merge-Seed (Join-Path $cfgDir 'settings.json') (Join-Path $config 'claude-home\settings.json.example')
 }
 
 if (-not $SkipEnv) {

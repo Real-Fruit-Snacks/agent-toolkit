@@ -164,7 +164,9 @@ $seed = Join-Path $env:TEMP 'npmseed'; Remove-Item $seed -Recurse -Force -ErrorA
 $skillPkgs = (Get-ChildItem caches\claude-skills -Recurse -Include *.md | Select-String -Pattern 'npm (install|i)( -g)?( -D)? ([a-zA-Z0-9@/._ -]+)' -AllMatches).Matches | ForEach-Object { $_.Groups[4].Value -split ' ' } | Where-Object { $_ -match '^[a-z@]' } | Sort-Object -Unique
 $mcp = (Get-Content (Join-Path $root 'config\mcp-servers.json') -Raw | ConvertFrom-Json).servers
 $mcpNpm = @($mcp | Where-Object kind -eq 'npm' | ForEach-Object { "$($_.package)@latest" })
-Write-Host "  MCP npm servers: $($mcpNpm.Count)"
+$lspNpm = @((Get-Content (Join-Path $root 'config\plugin-sources.json') -Raw | ConvertFrom-Json).lsp.npm | ForEach-Object { "$_@latest" })
+$mcpNpm += $lspNpm
+Write-Host "  MCP + LSP npm packages: $($mcpNpm.Count)"
 Push-Location $seed
 npm init -y | Out-Null
 npm install --cache "$root\caches\npm-cache" --no-audit --no-fund @('playwright@latest','@playwright/test@latest','@playwright/cli@latest',"agent-device@$adVer","expo-device-hub@$edhVer") @skillPkgs @mcpNpm | Out-Null
@@ -210,17 +212,31 @@ foreach ($side in 'win','linux') {
 # ---- Python MCP servers wheelhouse (best effort: a package without a wheel for this Python is skipped, not fatal) ----
 Write-Host '== Python MCP servers wheelhouse'
 foreach ($side in @(@('win', @('--python-version','3.13','--platform','win_amd64','--platform','any')), @('linux', @('--platform','manylinux2014_x86_64','--platform','manylinux_2_17_x86_64','--platform','manylinux_2_28_x86_64','--platform','any','--python-version','3.12')))) {
-  foreach ($pkg in (Get-Content 'caches\pip-wheelhouseequirements-mcp.txt' | Where-Object { $_ -and $_ -notmatch '^\s*#' })) {
+  foreach ($pkg in (Get-Content 'caches\pip-wheelhouse/requirements-mcp.txt' | Where-Object { $_ -and $_ -notmatch '^\s*#' })) {
     & $pyExe @pyArgs -m pip download --disable-pip-version-check --progress-bar off --only-binary=:all: -d "caches/pip-wheelhouse/$($side[0])" $pkg @($side[1]) 2>&1 | Select-String -Pattern 'ERROR' | ForEach-Object { Write-Warning "  $($side[0]) $pkg : no wheel ($_)" }
   }
 }
 
-# ---- GitHub MCP server binaries ----
-$ghmTag = gh release view -R github/github-mcp-server --json tagName -q .tagName
-Write-Host "== github-mcp-server $ghmTag"
-foreach ($side in 'win','linux') { New-Item -ItemType Directory -Force -Path "caches\mcp-bin\$side" | Out-Null; Get-ChildItem "caches\mcp-bin\$side" | Remove-Item -Force }
-gh release download $ghmTag -R github/github-mcp-server -D caches\mcp-bin\win   -p 'github-mcp-server_Windows_x86_64.zip' --clobber
-gh release download $ghmTag -R github/github-mcp-server -D caches\mcp-bin\linux -p 'github-mcp-server_Linux_x86_64.tar.gz' --clobber
+# ---- Release binaries: MCP servers (caches/mcp-bin) and language servers (caches/lsp-bin) ----
+$plugCfg = Get-Content (Join-Path $root 'config\plugin-sources.json') -Raw | ConvertFrom-Json
+$binSets = @(
+  @{ dir = 'mcp-bin'; items = @($mcp | Where-Object kind -eq 'bin' | ForEach-Object { @{ id = $_.id; repo = $_.package; win = $_.asset_win; linux = $_.asset_linux } }) },
+  @{ dir = 'lsp-bin'; items = @($plugCfg.lsp.bin | ForEach-Object { @{ id = $_.id; repo = $_.repo; win = $_.asset_win; linux = $_.asset_linux } }) }
+)
+foreach ($set in $binSets) {
+  foreach ($side in 'win','linux') { New-Item -ItemType Directory -Force -Path "caches\$($set.dir)\$side" | Out-Null; Get-ChildItem "caches\$($set.dir)\$side" | Remove-Item -Force }
+  foreach ($b in $set.items) {
+    $tag = gh release view -R $b.repo --json tagName -q .tagName
+    Write-Host "== $($b.id) $tag"
+    if ($b.win)   { gh release download $tag -R $b.repo -D "caches\$($set.dir)\win"   -p $b.win   --clobber; if ($LASTEXITCODE -ne 0) { throw "download failed: $($b.repo) $($b.win)" } }
+    if ($b.linux) { gh release download $tag -R $b.repo -D "caches\$($set.dir)\linux" -p $b.linux --clobber; if ($LASTEXITCODE -ne 0) { throw "download failed: $($b.repo) $($b.linux)" } }
+  }
+}
+
+# ---- Claude Code plugin marketplaces (vendored for offline use) ----
+Write-Host '== Plugin marketplaces'
+& $pyExe @pyArgs (Join-Path $PSScriptRoot 'vendor-plugins.py') $root
+if ($LASTEXITCODE -ne 0) { throw 'vendor-plugins.py failed' }
 
 # ---- Playwright browsers (Windows) ----
 if (-not $SkipPlaywright) {
