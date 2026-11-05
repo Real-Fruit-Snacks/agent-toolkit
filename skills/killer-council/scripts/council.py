@@ -388,7 +388,10 @@ def cmd_lint(a) -> None:
     if not briefs and not work:
         fail("give brief files to check, and/or --work <files>")
     # The run folder holds scores and earlier briefs; a brief must never point there.
-    run_paths = {str(ws).lower(), ws.as_posix().lower(), "council-runs"}
+    # Match it as given as well as resolved: on Windows, resolve() expands 8.3 short
+    # names (C:\Users\RUNNER~1), so a brief using the short form would slip past.
+    given = Path(a.workspace).expanduser().absolute()
+    run_paths = {str(given), given.as_posix(), str(ws), ws.as_posix(), "council-runs"}
     brief_leaks = BRIEF_LEAKS + [
         ("(?:" + "|".join(re.escape(p) for p in run_paths) + ")", "points into the run folder")]
     total = 0

@@ -208,6 +208,11 @@ try:
     leak.write_text(f"See {ws6 / 'round-1'} for details.\nAlso ~/.claude/council-runs/x\n", encoding="utf-8")
     out, code = run("lint", "-w", ws6, leak, ok=(1,))
     check("lint flags run-folder paths", out.count("points into the run folder") == 2, out)
+    resolved = ws6.resolve()
+    if str(resolved) != str(ws6):  # e.g. an 8.3 short temp path on Windows
+        leak.write_text(f"See {resolved / 'x'}.\n", encoding="utf-8")
+        out, code = run("lint", "-w", ws6, leak, ok=(1,))
+        check("lint flags the resolved form of a short run-folder path", "points into the run folder" in out, out)
 
     # ---------- bad score file
     (ws5 / "round-2" / "scores").mkdir(parents=True)
