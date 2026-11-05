@@ -1,15 +1,15 @@
 # Pinned versions
 
-Generated 2026-11-04 by scripts/write-versions.ps1.
+Generated 2026-11-05 by scripts/write-versions.ps1.
 
 | Component | Version | File | MB | SHA256 |
 |---|---|---|---|---|
-| T3 Code (Windows installer) | 0.1.7-nightly.20261104.4151 | `T3-Code-0.1.7-nightly.20261104.4151-x64.exe` | 278 | `f3bc76813f1289dc98c7e1244184c26d845448f26677650cf539a7ffc78b92c1` |
-| T3 Code (Windows portable) | 0.1.7-nightly.20261104.4151 | `T3-Code-0.1.7-nightly.20261104.4151-x64.zip` | 186 | `b8c2dd2df24dd45230254e11848847972619f3abaf80ba5ee781f33d047a891b` |
-| T3 server/CLI (win32) | 0.1.7-nightly.20261104.4151 | `t3-0.1.7-nightly.20261104.4151-win32-x64.zip` | 108 | `278bc59e50d079f1898c7215b6dfc085c7d9258917c787a3e64048bc4de383cb` |
-| T3 Code (deb) | 0.1.7-nightly.20261104.4151 | `T3-Code-0.1.7-nightly.20261104.4151-amd64.deb` | 153 | `8bbd180588c60f6dc76b3ac1a6b02fcf83d23a3c80a588c3ff477fd510a09b70` |
-| T3 Code (AppImage) | 0.1.7-nightly.20261104.4151 | `T3-Code-0.1.7-nightly.20261104.4151-x86_64.AppImage` | 183 | `cdedddbc708de8f6b83000d7a8090853c41e2898faea3e0f97cda2c5f409d611` |
-| T3 server/CLI (linux) | 0.1.7-nightly.20261104.4151 | `t3-0.1.7-nightly.20261104.4151-linux-x64.tar.gz` | 118 | `f8fc121c37ed19bbd286bf732cc7bb92434c9e13d1fda1e3172245c86a131a96` |
+| T3 Code (Windows installer) | 0.1.8-nightly.20261105.4205 | `T3-Code-0.1.8-nightly.20261105.4205-x64.exe` | 278 | `0b01c19dca2f2181e2dd6c1697679d1c1aae83216c13f4565adca90d4a0d9897` |
+| T3 Code (Windows portable) | 0.1.8-nightly.20261105.4205 | `T3-Code-0.1.8-nightly.20261105.4205-x64.zip` | 187 | `c1596d067a61c6de32c9917f40f53215d7afa79dcef8321d73b89f0a9a327c3d` |
+| T3 server/CLI (win32) | 0.1.8-nightly.20261105.4205 | `t3-0.1.8-nightly.20261105.4205-win32-x64.zip` | 108 | `dc238d3cc5cd4add19c4dd336623c6bbdaf381fad3781c06042fa747f9bc59df` |
+| T3 Code (deb) | 0.1.8-nightly.20261105.4205 | `T3-Code-0.1.8-nightly.20261105.4205-amd64.deb` | 153 | `8a749230371d20c41445ab1b3ca2a4ddb002f9acee33a65bea56837444889cb2` |
+| T3 Code (AppImage) | 0.1.8-nightly.20261105.4205 | `T3-Code-0.1.8-nightly.20261105.4205-x86_64.AppImage` | 183 | `fbc5ebb0bae496d3b0e7e130043544019d46ba672214f233f40fc65c2fba247d` |
+| T3 server/CLI (linux) | 0.1.8-nightly.20261105.4205 | `t3-0.1.8-nightly.20261105.4205-linux-x64.tar.gz` | 118 | `a75235405d988cee035bc12d0984bf4a5de240025d1f5e0347fb947b2efe9d27` |
 | Claude Code (Windows) | 2.1.318 | `claude-2.1.318-win32-x64.exe` | 327 | `b9aa5b08dc2cc46ea77d334dce792d1b8fdbb3a43bb290efdebdc905b1181082` |
 | Claude Code (Linux glibc) | 2.1.318 | `claude-2.1.318-linux-x64` | 322 | `708c77b204db30086ff6f1ed34577bda03e1be74ced80557cbf7b54249ebf0bd` |
 | Claude Code (Linux musl) | 2.1.318 | `claude-2.1.318-linux-x64-musl` | 309 | `e6ff03823153a699d708c88c2fa87d18a1f6b45f13b14a985a221f8af442dd54` |
@@ -22,7 +22,7 @@ Generated 2026-11-04 by scripts/write-versions.ps1.
 | GitHub CLI (deb) | 2.103.3 | `gh_2.103.3_linux_amd64.deb` | 14 | `e3bafef96328d1a67de3a968bdfe1cc2ffd58cf6aba8b5e201356897ed06bb3d` |
 | WSL platform | 3.0.3.0 | `wsl.3.0.3.0.x64.msi` | 351 | `ae977286974255bd26bf925f00f40f5692c6b2084155cbc0563c09aea091f211` |
 | Ubuntu WSL rootfs | noble | `ubuntu-noble-wsl-amd64-wsl.rootfs.tar.gz` | 340 | `8251e27ffff381a4af5f41dcb94d867de3e0d9774a9241908ab34555d99315ea` |
-| Baked distro export | ubuntu-dev | `ubuntu-dev.tar.gz` | 4040 | `54bc4ac9e30793f1b71a6417a5746c181ef81071fef260fc365983ecf60f11a3` |
+| Baked distro export | ubuntu-dev | `ubuntu-dev.tar.gz` | 4041 | `6fd603b5bfe35f4496b05310ed004fbcb88d1ead0245c75ac01f5b32ae19614e` |
 | github-mcp-server (win) | github-mcp-server | `github-mcp-server_Windows_x86_64.zip` | 9 | `ddce274916ebf31346dee71a0ed3345e80cd36b060a0bfb8160db0afc411e9d3` |
 | mcp-grafana (win) | mcp-grafana | `mcp-grafana_Windows_x86_64.zip` | 18 | `231695fef9031a2aed064ddab46b3288e7abd11822890a320cd21b547ffdc684` |
 | rust-analyzer (win) | rust-analyzer | `rust-analyzer-x86_64-pc-windows-msvc.zip` | 17 | `5450a3735c601f047dc9ca46a01add55c4ac7ef450ae5e710d249a26d65f5632` |
@@ -45,7 +45,7 @@ Generated 2026-11-04 by scripts/write-versions.ps1.
 ## Also in the release
 
 - caches/npm-cache: seeded npm cache for offline installs of playwright, agent-device, expo-device-hub and the skill packages
-- caches/claude-skills: the public anthropics/skills set (Apache-2.0)
+- caches/claude-skills: the public anthropics/skills set (Apache-2.0), t3dotgg/tstack (MIT) and killer-council from skills/ in this repo (MIT)
 - caches/claude-code-docs: Claude Code documentation, markdown, from code.claude.com/docs/llms.txt
 - caches/pip-wheelhouse: Python wheels for the document skills and the Python MCP servers (win + linux)
 - MCP servers (config/mcp-servers.json): npm ones in the npm cache, Python ones in the wheelhouse, github-mcp-server binaries in caches/mcp-bin
@@ -61,7 +61,7 @@ Generated 2026-11-04 by scripts/write-versions.ps1.
 | `superpowers-dev` | obra/superpowers | `22f0b46` | 1 | superpowers |
 | `claude-code-workflows` | wshobson/agents | `7e2fb55` | 92 | - |
 | `voltagent-subagents` | VoltAgent/awesome-claude-code-subagents | `ed74d11` | 10 | - |
-| `trailofbits` | trailofbits/skills | `711af09` | 46 | - |
+| `trailofbits` | trailofbits/skills | `470419e` | 46 | - |
 | `atk-financial-services` | anthropics/financial-services | `6056506` | 19 | - |
 
 ## MCP servers (36)
