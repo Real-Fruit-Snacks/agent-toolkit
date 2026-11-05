@@ -1,0 +1,476 @@
+{
+ "tag": "v1.0.2",
+ "published": "2026-11-05T06:51:42Z",
+ "assets": [
+  {
+   "name": "caches--claude-code-docs.zip",
+   "size": 3344639,
+   "sha256": "448f5add69a7296d63eae1e4c3a4fe6a62836a6d875012d6b4149011d3720559"
+  },
+  {
+   "name": "caches--claude-plugins.zip",
+   "size": 20250070,
+   "sha256": "ad44c02933f8d3efb8bceb9e31750e8b4ba303d174c490b240984d1bf0c84fe9"
+  },
+  {
+   "name": "caches--claude-skills.zip",
+   "size": 4372052,
+   "sha256": "493c7cceb6f97a219699ee768e2dfab7752b3674da156de72cb3089c37a0cd10"
+  },
+  {
+   "name": "caches--lsp-bin.zip",
+   "size": 33224541,
+   "sha256": "8e41f89c4dae48a1c5373461326ecda3ff2f26aa3aa3d1c48eb4fad01524356d"
+  },
+  {
+   "name": "caches--mcp-bin.zip",
+   "size": 56730821,
+   "sha256": "956a522783bdea2a7ad1efb6b346aff8f8cb35e77b88ada7976c832c8768ecdd"
+  },
+  {
+   "name": "caches--npm-cache.zip",
+   "size": 1214405185,
+   "sha256": "ae0f0e5674a1a65ff1334471d943c7101d7de9aef8591627d2c0a563092e2293"
+  },
+  {
+   "name": "caches--npm.zip",
+   "size": 13539168,
+   "sha256": "070a23df1065e08ae17804e782d2dc08c68f1f29491e83e0e3f10bba5432f292"
+  },
+  {
+   "name": "caches--pip-wheelhouse.zip",
+   "size": 919866674,
+   "sha256": "88f9545217b8dca1c7a0c98e879eae4d5eb08247786393fa0c652bcfab533636"
+  },
+  {
+   "name": "caches--playwright-browsers-linux.zip",
+   "size": 306812630,
+   "sha256": "44398af5824654c8155e2972ff03f9db3d46dbc0433800552887be79051d61af"
+  },
+  {
+   "name": "caches--playwright-browsers.zip",
+   "size": 341645412,
+   "sha256": "56df53d3ef87abac8a1da02b8d99ebafe86c5d934ddd907e3085db38abc5f416"
+  },
+  {
+   "name": "caches--t3-tools-linux.zip",
+   "size": 145571917,
+   "sha256": "caba236e09af9e698879807507ecfd48891eb3f5e9c373f3b11e6914570ea83a"
+  },
+  {
+   "name": "caches--t3-tools-win.zip",
+   "size": 148203678,
+   "sha256": "62d8d9109f9e0b05367b0fa2536ecbb430db57333d96e05bcf97f6750f33e9f4"
+  },
+  {
+   "name": "caches--t3-userdata.zip",
+   "size": 150547,
+   "sha256": "fc03e65eb56e1e23d3cf167f5cf0f5120080f138eca3246594026a852dbaf4e4"
+  },
+  {
+   "name": "linux--claude-2.1.318-linux-x64",
+   "size": 337814032,
+   "sha256": "708c77b204db30086ff6f1ed34577bda03e1be74ced80557cbf7b54249ebf0bd"
+  },
+  {
+   "name": "linux--claude-2.1.318-linux-x64-musl",
+   "size": 324274760,
+   "sha256": "e6ff03823153a699d708c88c2fa87d18a1f6b45f13b14a985a221f8af442dd54"
+  },
+  {
+   "name": "linux--gh_2.103.3_linux_amd64.deb",
+   "size": 15105286,
+   "sha256": "e3bafef96328d1a67de3a968bdfe1cc2ffd58cf6aba8b5e201356897ed06bb3d"
+  },
+  {
+   "name": "linux--node-v24.22.2-linux-x64.tar.xz",
+   "size": 32039312,
+   "sha256": "48cc0e21e048790e54c0cf5749c2725005313d652651c40b7a21feb9697aaf75"
+  },
+  {
+   "name": "linux--t3-0.1.8-nightly.20261105.4205-linux-x64.tar.gz",
+   "size": 123940401,
+   "sha256": "a75235405d988cee035bc12d0984bf4a5de240025d1f5e0347fb947b2efe9d27"
+  },
+  {
+   "name": "linux--T3-Code-0.1.8-nightly.20261105.4205-amd64.deb",
+   "size": 160582856,
+   "sha256": "8a749230371d20c41445ab1b3ca2a4ddb002f9acee33a65bea56837444889cb2"
+  },
+  {
+   "name": "linux--T3-Code-0.1.8-nightly.20261105.4205-x86_64.AppImage",
+   "size": 191825767,
+   "sha256": "fbc5ebb0bae496d3b0e7e130043544019d46ba672214f233f40fc65c2fba247d"
+  },
+  {
+   "name": "repo--agent-toolkit-v1.0.2.zip",
+   "size": 880856,
+   "sha256": "c90a29167b0c3081af066291a394c899b771cf4edc98404b460950597936170f"
+  },
+  {
+   "name": "SHA256SUMS.txt",
+   "size": 4020,
+   "sha256": "324b2eec303738802d086d6050fef4201b29ff531dac2862ac86a70878174ec2"
+  },
+  {
+   "name": "windows--claude-2.1.318-win32-x64.exe",
+   "size": 342408352,
+   "sha256": "b9aa5b08dc2cc46ea77d334dce792d1b8fdbb3a43bb290efdebdc905b1181082"
+  },
+  {
+   "name": "windows--gh_2.103.3_windows_amd64.msi",
+   "size": 15450112,
+   "sha256": "5073112b7abb5ffbba24b76aee7e89269af531218c0a42751f5f0bfb6440c2cc"
+  },
+  {
+   "name": "windows--Git-2.56.0.4-64-bit.exe",
+   "size": 66850032,
+   "sha256": "4961a4a8cc778d8b6e00a5819e5fe4d078b754555aff7aedc2d77a5d74c2de80"
+  },
+  {
+   "name": "windows--nightly.yml",
+   "size": 436,
+   "sha256": "a219b50271959d2e66924c4883c91d03f70a0578a2b5550b1b0a48b74815a6ef"
+  },
+  {
+   "name": "windows--node-v24.22.2-x64.msi",
+   "size": 33333248,
+   "sha256": "9231bf64d19bef391dd5ee8af65411d3799c3c44a842d2320849cc1da60b6b6d"
+  },
+  {
+   "name": "windows--PowerShell-7.6.9-win-x64.msi",
+   "size": 117493760,
+   "sha256": "50d33c7494aaf82b987cfd4de3f232d04f91fdd4c0deeca8a669cced3e7cf8f9"
+  },
+  {
+   "name": "windows--python-3.13.17-amd64.exe",
+   "size": 29941280,
+   "sha256": "5da012101ba2e17113a9a1cd901e9ce1441086f2b7ecb5de06ec94163899a190"
+  },
+  {
+   "name": "windows--SHA256SUMS",
+   "size": 571,
+   "sha256": "92233746261cf03422a42263e0630cb3651747951cd315af92d1079add0c9e47"
+  },
+  {
+   "name": "windows--SHASUMS256-node-v24.22.2.txt",
+   "size": 3171,
+   "sha256": "aec92ae945293821c22aed4c37b97741688254bac353b861fc9fb25b81ce4567"
+  },
+  {
+   "name": "windows--t3-0.1.8-nightly.20261105.4205-win32-x64.zip",
+   "size": 113660071,
+   "sha256": "dc238d3cc5cd4add19c4dd336623c6bbdaf381fad3781c06042fa747f9bc59df"
+  },
+  {
+   "name": "windows--T3-Code-0.1.8-nightly.20261105.4205-x64.exe",
+   "size": 291596968,
+   "sha256": "0b01c19dca2f2181e2dd6c1697679d1c1aae83216c13f4565adca90d4a0d9897"
+  },
+  {
+   "name": "windows--T3-Code-0.1.8-nightly.20261105.4205-x64.zip",
+   "size": 195565243,
+   "sha256": "c1596d067a61c6de32c9917f40f53215d7afa79dcef8321d73b89f0a9a327c3d"
+  },
+  {
+   "name": "wsl--ubuntu-dev.tar.gz.part1",
+   "size": 1992294400,
+   "sha256": "f65920ab965de3e9c21973984586a80705bfeb314004c5db985f3aa64c37eda6"
+  },
+  {
+   "name": "wsl--ubuntu-dev.tar.gz.part2",
+   "size": 1992294400,
+   "sha256": "0307385c58a3ea66ed7933feb6b3d82c357a1e768fbfaa1adb85067a195b8417"
+  },
+  {
+   "name": "wsl--ubuntu-dev.tar.gz.part3",
+   "size": 252447330,
+   "sha256": "c82474cd212d4def38f000aa8d0fa854131a4503b06e401237279d620094e7b2"
+  },
+  {
+   "name": "wsl--ubuntu-dev.tar.gz.sha256",
+   "size": 88,
+   "sha256": "02c23d9510b7576246db581e663d15700ee49699f9c07c81574f652a84efacbd"
+  },
+  {
+   "name": "wsl--ubuntu-noble-SHA256SUMS",
+   "size": 642,
+   "sha256": "337176fdeda3dbbf7bd36146894c03670d5ed8cffc2bd804f39d4c4ace0d424f"
+  },
+  {
+   "name": "wsl--ubuntu-noble-wsl-amd64-wsl.rootfs.tar.gz",
+   "size": 356739129,
+   "sha256": "8251e27ffff381a4af5f41dcb94d867de3e0d9774a9241908ab34555d99315ea"
+  },
+  {
+   "name": "wsl--wsl.3.0.3.0.x64.msi",
+   "size": 367575040,
+   "sha256": "ae977286974255bd26bf925f00f40f5692c6b2084155cbc0563c09aea091f211"
+  }
+ ],
+ "pins": [
+  [
+   "T3 Code",
+   "0.1.8-nightly.20261105.4205"
+  ],
+  [
+   "Claude Code CLI",
+   "2.1.318"
+  ],
+  [
+   "Node.js",
+   "v24.22.2"
+  ],
+  [
+   "Git for Windows",
+   "2.56.0.4"
+  ],
+  [
+   "GitHub CLI",
+   "2.103.3"
+  ],
+  [
+   "PowerShell 7",
+   "7.6.9"
+  ],
+  [
+   "Python",
+   "3.13.17"
+  ],
+  [
+   "WSL platform",
+   "3.0.3.0"
+  ],
+  [
+   "Ubuntu for WSL",
+   "noble"
+  ],
+  [
+   "T3 tool cache",
+   "agent-device 0.21.31, chrome-headless-shell 156.0.8078.80, expo-device-hub 0.19.1"
+  ],
+  [
+   "Playwright",
+   "1.64.1 with chromium_headless_shell-1248 and chromium-1248"
+  ]
+ ],
+ "skills": "the public anthropics/skills set (Apache-2.0), t3dotgg/tstack (MIT) and killer-council from skills/ in this repo (MIT)",
+ "marketplaces": [
+  {
+   "name": "atk-core-plugins",
+   "upstream": "anthropics/claude-plugins-official",
+   "commit": "fa4eb54",
+   "plugins": 49,
+   "enabled": [
+    "feature-dev",
+    "code-review",
+    "pr-review-toolkit",
+    "commit-commands",
+    "code-simplifier",
+    "claude-md-management",
+    "security-guidance",
+    "pyright-lsp",
+    "typescript-lsp",
+    "rust-analyzer-lsp"
+   ]
+  },
+  {
+   "name": "atk-knowledge-work",
+   "upstream": "anthropics/knowledge-work-plugins",
+   "commit": "d900840",
+   "plugins": 22,
+   "enabled": [
+    "engineering"
+   ]
+  },
+  {
+   "name": "superpowers-dev",
+   "upstream": "obra/superpowers",
+   "commit": "22f0b46",
+   "plugins": 1,
+   "enabled": [
+    "superpowers"
+   ]
+  },
+  {
+   "name": "claude-code-workflows",
+   "upstream": "wshobson/agents",
+   "commit": "7e2fb55",
+   "plugins": 92,
+   "enabled": []
+  },
+  {
+   "name": "voltagent-subagents",
+   "upstream": "VoltAgent/awesome-claude-code-subagents",
+   "commit": "ed74d11",
+   "plugins": 10,
+   "enabled": []
+  },
+  {
+   "name": "trailofbits",
+   "upstream": "trailofbits/skills",
+   "commit": "470419e",
+   "plugins": 46,
+   "enabled": []
+  },
+  {
+   "name": "atk-financial-services",
+   "upstream": "anthropics/financial-services",
+   "commit": "6056506",
+   "plugins": 19,
+   "enabled": []
+  }
+ ],
+ "mcp": {
+  "npm": [
+   [
+    "playwright",
+    true
+   ],
+   [
+    "chrome-devtools",
+    false
+   ],
+   [
+    "filesystem",
+    false
+   ],
+   [
+    "memory",
+    true
+   ],
+   [
+    "sequential-thinking",
+    true
+   ],
+   [
+    "desktop-commander",
+    true
+   ],
+   [
+    "dbhub",
+    false
+   ],
+   [
+    "mongodb",
+    false
+   ],
+   [
+    "kubernetes",
+    false
+   ],
+   [
+    "gitlab",
+    false
+   ],
+   [
+    "task-master",
+    false
+   ],
+   [
+    "mcp-remote",
+    false
+   ],
+   [
+    "inspector",
+    false
+   ],
+   [
+    "jetbrains",
+    false
+   ],
+   [
+    "nx",
+    false
+   ],
+   [
+    "azure-devops",
+    false
+   ],
+   [
+    "code-runner",
+    false
+   ],
+   [
+    "sentry",
+    false
+   ],
+   [
+    "pdf",
+    false
+   ]
+  ],
+  "pip": [
+   [
+    "git",
+    false
+   ],
+   [
+    "fetch",
+    true
+   ],
+   [
+    "time",
+    false
+   ],
+   [
+    "markitdown",
+    true
+   ],
+   [
+    "atlassian",
+    false
+   ],
+   [
+    "serena",
+    false
+   ],
+   [
+    "redis",
+    false
+   ],
+   [
+    "duckdb",
+    false
+   ],
+   [
+    "word",
+    false
+   ],
+   [
+    "powerpoint",
+    false
+   ],
+   [
+    "excel",
+    false
+   ],
+   [
+    "jupyter",
+    false
+   ],
+   [
+    "prometheus",
+    false
+   ],
+   [
+    "docker",
+    false
+   ],
+   [
+    "semgrep",
+    false
+   ]
+  ],
+  "bin": [
+   [
+    "github",
+    false
+   ],
+   [
+    "grafana",
+    false
+   ]
+  ]
+ }
+}

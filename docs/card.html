@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<!-- The GitHub social preview, 1280 x 640. Render from the repo root with killer-repo's card.mjs:
+       node card.mjs docs/card.html --out docs/assets/social.png
+     It shows the finished frame of the README's load plan (assets/plan-dark.svg) under the name.
+     The SVG is inlined so its animation can be switched off; the crop drops its header and readout. -->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+  @font-face { font-family: "Red Hat Display"; font-weight: 300 900; src: url(fonts/red-hat-display-latin.woff2) format("woff2"); }
+  @font-face { font-family: "Red Hat Text"; font-weight: 300 700; src: url(fonts/red-hat-text-latin.woff2) format("woff2"); }
+  html, body { margin: 0; width: 1280px; height: 640px; background: #0C0D10; overflow: hidden; }
+  body { box-sizing: border-box; padding: 58px 80px 0; display: flex; flex-direction: column; gap: 14px; }
+  .row { display: flex; align-items: flex-end; justify-content: space-between; gap: 40px; }
+  h1 { margin: 0; font: 800 104px/.9 "Red Hat Display", sans-serif; color: #E8E6E1; letter-spacing: -0.03em; }
+  p { margin: 0 0 6px; font: 400 30px/1.2 "Red Hat Text", sans-serif; color: #8A8F99; text-align: right; }
+  #plan svg { display: block; width: 1120px; height: auto; }
+  #plan svg > rect:first-of-type { display: none; }
+  #plan svg * { animation: none !important; }
+  #plan svg .ghost { display: none; }
+</style>
+</head>
+<body>
+  <div class="row"><h1>agent-toolkit</h1><p>Pinned installers and config<br>for my coding setup</p></div>
+  <div id="plan"></div>
+  <script>
+    fetch('assets/plan-dark.svg').then(function (r) { return r.text(); }).then(function (t) {
+      var box = document.getElementById('plan');
+      box.innerHTML = t;
+      var svg = box.querySelector('svg'), w = +svg.getAttribute('width'), h = +svg.getAttribute('height');
+      svg.setAttribute('viewBox', '0 150 ' + w + ' ' + (h - 150 - 66));   // from the top of the overshoot to the group labels
+      svg.removeAttribute('width'); svg.removeAttribute('height');
+    });
+  </script>
+</body>
+</html>

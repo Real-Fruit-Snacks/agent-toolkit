@@ -3,182 +3,282 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>agent-toolkit — pinned installers and config for my coding setup</title>
-<meta name="description" content="One GitHub release that installs T3 Code, the Claude Code CLI, Node, Git and the GitHub CLI at pinned versions, restores the caches they fetch on first run, and imports a baked WSL distro. Windows, WSL and Linux.">
+<title>agent-toolkit: pinned installers and config for my coding setup</title>
+<meta name="description" content="One GitHub release, rebuilt every Sunday, that installs T3 Code, the Claude Code CLI, Node, Git, the GitHub CLI, PowerShell 7 and Python at pinned versions, with MCP servers, plugins, skills and every cache they would otherwise download. Windows, WSL and Linux.">
 <link rel="canonical" href="https://real-fruit-snacks.github.io/agent-toolkit/">
 <meta property="og:title" content="agent-toolkit">
-<meta property="og:description" content="Pinned installers and config for my coding setup">
+<meta property="og:description" content="Pinned installers and config for my coding setup, in one GitHub release that is rebuilt every Sunday and checked by digest before it ships.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://real-fruit-snacks.github.io/agent-toolkit/">
-<meta property="og:image" content="https://real-fruit-snacks.github.io/agent-toolkit/assets/cover-dark.png">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="560">
-<meta property="og:image:alt" content="agent-toolkit running its Windows install script, installing Node, T3 Code and the Claude Code CLI and restoring the tool caches">
+<meta property="og:image" content="https://real-fruit-snacks.github.io/agent-toolkit/assets/social.png">
+<meta property="og:image:width" content="1280">
+<meta property="og:image:height" content="640">
+<meta property="og:image:alt" content="agent-toolkit's latest release drawn to scale: one column per asset under a 2 GiB line, the Ubuntu distro split into three parts">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
-<link rel="icon" href="assets/favicon.ico" sizes="48x48">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="icon" href="favicon.ico" sizes="32x32">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#0C0D10">
 <script>
-  // Theme before first paint: a saved choice wins, otherwise follow the OS.
-  (function () {
-    try {
-      var t = localStorage.getItem('rfs-theme');
-      if (t === 'nightshift' || t === 'dayshift') document.documentElement.setAttribute('data-theme', t);
-    } catch (e) {}
-  })();
+  // A saved theme wins over the system setting. The key is shared with the other RFS pages.
+  try { var t = localStorage.getItem('rfs-theme'); if (t === 'nightshift' || t === 'dayshift') document.documentElement.dataset.theme = t; } catch (e) {}
 </script>
-<link rel="preload" href="assets/fonts/ibm-plex-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="assets/fonts/ibm-plex-mono-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="assets/rfs.css">
-<link rel="stylesheet" href="assets/site.css">
+<link rel="preload" href="fonts/red-hat-display-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/red-hat-text-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/red-hat-mono-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
+<a class="skip" href="#install">Skip to the install steps</a>
 
-<header class="site">
+<header class="top">
   <div class="wrap">
-    <a class="brand" href="https://real-fruit-snacks.github.io/" aria-label="RFS home">
-      <picture>
-        <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Real-Fruit-Snacks/rfs-brand/main/assets/rfs-lockup-dark.svg">
-        <img alt="RFS" src="https://raw.githubusercontent.com/Real-Fruit-Snacks/rfs-brand/main/assets/rfs-lockup-light.svg" data-lockup>
-      </picture>
-      <span class="sep" aria-hidden="true"></span>
-      <span class="name">agent-toolkit</span>
-    </a>
-    <nav>
+    <a class="name" href="./" aria-label="agent-toolkit, top of the page">agent-toolkit</a>
+    <nav aria-label="Page">
       <a href="#install">Install</a>
-      <a href="#whats">What's in it</a>
-      <a href="#platforms">Platforms</a>
-      <a class="keep" href="https://github.com/Real-Fruit-Snacks/agent-toolkit">GitHub</a>
-      <button class="toggle" type="button" id="theme" aria-label="Switch between Nightshift and Dayshift"><span class="night">Nightshift</span><span class="day">Dayshift</span></button>
+      <a href="#whats">What's pinned</a>
+      <a href="#build">How it's built</a>
+      <a href="#tested">Tested on</a>
+      <a href="https://github.com/Real-Fruit-Snacks/agent-toolkit">GitHub</a>
     </nav>
+    <button class="theme" type="button" id="theme"><span class="sr-only">Theme: </span><span class="t-night">Night</span><span class="t-day">Day</span></button>
   </div>
 </header>
 
-<div class="hero">
-  <div class="grid-bg" aria-hidden="true"></div>
-  <div class="glow" aria-hidden="true"></div>
+<main>
+<section class="hero" style="--head:1.973" aria-labelledby="title">
   <div class="wrap">
-    <div>
-      <p class="label">Windows · WSL · Linux</p>
-      <h1>agent-toolkit</h1>
-      <p class="lead">Pinned installers and config for my coding setup</p>
-      <p class="sub">One release holds T3 Code, the Claude Code CLI, Node, Git, the GitHub CLI, PowerShell 7 and Python at tested versions, the caches those tools would otherwise fetch on first run, and a provisioned WSL distro. Two machines built from the same release are identical, and the install touches the network only to reach whatever model endpoint you point it at.</p>
+    <div class="intro">
+      <h1 id="title">Pinned installers and config for my coding&nbsp;setup</h1>
+      <p class="lede">T3 Code, the Claude Code CLI, Node, Git, the GitHub CLI, PowerShell&nbsp;7 and Python at tested versions, with <!-- gen:mcp-count -->36<!-- /gen:mcp-count --> MCP servers, <!-- gen:plugin-count -->239<!-- /gen:plugin-count --> plugins and every cache those tools would otherwise download on first run, in one GitHub release. Two machines built from the same release come out the same.</p>
+      <p class="acts"><!-- gen:get --><a class="get" href="https://github.com/Real-Fruit-Snacks/agent-toolkit/releases/tag/v1.0.2">Get v1.0.2 from GitHub</a><!-- /gen:get --> <a class="how" href="#install">Install steps</a></p>
+    </div>
 
-      <div class="install" id="install">
-        <div class="tabs" role="tablist">
-          <button role="tab" aria-selected="true" data-pane="win">Windows</button>
-          <button role="tab" aria-selected="false" data-pane="wsl">WSL</button>
-          <button role="tab" aria-selected="false" data-pane="lin">Linux</button>
-        </div>
-        <div class="pane" data-active data-id="win"><pre><code>.\scripts\download-release.ps1 -To C:\toolkit-assets
-.\scripts\unpack-release.ps1 -From C:\toolkit-assets
-.\scripts\install-windows.ps1</code></pre><button class="copy" data-copy=".\scripts\download-release.ps1 -To C:\toolkit-assets
-.\scripts\unpack-release.ps1 -From C:\toolkit-assets
-.\scripts\install-windows.ps1">Copy</button></div>
-        <div class="pane" data-id="wsl"><pre><code>.\scripts\setup-wsl.ps1</code></pre><button class="copy" data-copy=".\scripts\setup-wsl.ps1">Copy</button></div>
-        <div class="pane" data-id="lin"><pre><code>sudo bash scripts/install-linux.sh</code></pre><button class="copy" data-copy="sudo bash scripts/install-linux.sh">Copy</button></div>
-        <div class="foot">Download the <a href="https://github.com/Real-Fruit-Snacks/agent-toolkit/releases/latest">latest release</a> assets first. <code>unpack-release.ps1</code> sorts them back into the folder layout; the install script then installs the apps, restores the caches and sets the environment variables that turn off their updaters and telemetry. Open a new terminal afterwards.</div>
+    <dl class="label" aria-label="The latest release">
+      <!-- gen:label --><div><dt>release</dt><dd>v1.0.2</dd></div><div><dt>published</dt><dd><time datetime="2026-11-05T06:51Z">5 Nov 2026, 06:51 UTC</time></dd></div><div class="big"><dt>assets</dt><dd>41</dd></div><div class="big"><dt>in total</dt><dd>9.84<small>&nbsp;GiB</small></dd></div><!-- /gen:label -->
+      <div><dt>rebuilt</dt><dd>every Sunday, 08:00&nbsp;UTC</dd></div>
+    </dl>
+
+    <figure class="plan run" id="plan">
+      <!-- gen:plan --><div class="stage" style="--head:1.973;grid-template-columns:1fr 1fr var(--gg) 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr var(--gg) 1fr 1fr 1fr 1fr 1fr 1fr 1fr var(--gg) 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr var(--gg) 1fr 1fr 1fr 1fr 1fr 1fr 1fr"><p class="limit"><span>2&nbsp;GiB</span> <span class="std">the largest file GitHub takes</span><span class="over" aria-hidden="true">ubuntu-dev.tar.gz is over it</span></p><p class="note" style="grid-column:1 / 39"><b>ubuntu-dev.tar.gz</b> is 3.95 GiB, so it ships as 3&nbsp;parts of 1900&nbsp;MiB or less</p><span class="ghost" style="grid-column:39;--h1:0.9277;--hw:1.973" aria-hidden="true"><i style="--at:0.9277"></i></span><ol class="cols" aria-hidden="true"><li class="col" style="--h:0.0004;--i:0;grid-column:1" data-n="repo--agent-toolkit-v1.0.2.zip" data-s="860 KiB" data-d="c90a29167b0c" data-to="the repo itself, for a machine without a clone"></li><li class="col" style="--h:0;--i:1;grid-column:2" data-n="SHA256SUMS.txt" data-s="3.9 KiB" data-d="324b2eec3037" data-to="the SHA-256 of every other asset"></li><li class="col" style="--h:0.1594;--i:2;grid-column:4" data-n="windows--claude-2.1.318-win32-x64.exe" data-s="327 MiB" data-d="b9aa5b08dc2c" data-to="goes to windows\claude-code\"></li><li class="col" style="--h:0.1358;--i:3;grid-column:5" data-n="windows--T3-Code-0.1.8-nightly.20261105.4205-x64.exe" data-s="278 MiB" data-d="0b01c19dca2f" data-to="goes to windows\"></li><li class="col" style="--h:0.0911;--i:4;grid-column:6" data-n="windows--T3-Code-0.1.8-nightly.20261105.4205-x64.zip" data-s="187 MiB" data-d="c1596d067a61" data-to="goes to windows\"></li><li class="col" style="--h:0.0547;--i:5;grid-column:7" data-n="windows--PowerShell-7.6.9-win-x64.msi" data-s="112 MiB" data-d="50d33c7494aa" data-to="goes to windows\"></li><li class="col" style="--h:0.0529;--i:6;grid-column:8" data-n="windows--t3-0.1.8-nightly.20261105.4205-win32-x64.zip" data-s="108 MiB" data-d="dc238d3cc5cd" data-to="goes to windows\"></li><li class="col" style="--h:0.0311;--i:7;grid-column:9" data-n="windows--Git-2.56.0.4-64-bit.exe" data-s="64 MiB" data-d="4961a4a8cc77" data-to="goes to windows\"></li><li class="col" style="--h:0.0155;--i:8;grid-column:10" data-n="windows--node-v24.22.2-x64.msi" data-s="32 MiB" data-d="9231bf64d19b" data-to="goes to windows\"></li><li class="col" style="--h:0.0139;--i:9;grid-column:11" data-n="windows--python-3.13.17-amd64.exe" data-s="29 MiB" data-d="5da012101ba2" data-to="goes to windows\"></li><li class="col" style="--h:0.0072;--i:10;grid-column:12" data-n="windows--gh_2.103.3_windows_amd64.msi" data-s="15 MiB" data-d="5073112b7abb" data-to="goes to windows\"></li><li class="col" style="--h:0;--i:11;grid-column:13" data-n="windows--SHASUMS256-node-v24.22.2.txt" data-s="3.1 KiB" data-d="aec92ae94529" data-to="goes to windows\"></li><li class="col" style="--h:0;--i:12;grid-column:14" data-n="windows--SHA256SUMS" data-s="571 bytes" data-d="92233746261c" data-to="goes to windows\"></li><li class="col" style="--h:0;--i:13;grid-column:15" data-n="windows--nightly.yml" data-s="436 bytes" data-d="a219b5027195" data-to="goes to windows\"></li><li class="col" style="--h:0.1573;--i:14;grid-column:17" data-n="linux--claude-2.1.318-linux-x64" data-s="322 MiB" data-d="708c77b204db" data-to="goes to linux\claude-code\"></li><li class="col" style="--h:0.151;--i:15;grid-column:18" data-n="linux--claude-2.1.318-linux-x64-musl" data-s="309 MiB" data-d="e6ff03823153" data-to="goes to linux\claude-code\"></li><li class="col" style="--h:0.0893;--i:16;grid-column:19" data-n="linux--T3-Code-0.1.8-nightly.20261105.4205-x86_64.AppImage" data-s="183 MiB" data-d="fbc5ebb0bae4" data-to="goes to linux\"></li><li class="col" style="--h:0.0748;--i:17;grid-column:20" data-n="linux--T3-Code-0.1.8-nightly.20261105.4205-amd64.deb" data-s="153 MiB" data-d="8a749230371d" data-to="goes to linux\"></li><li class="col" style="--h:0.0577;--i:18;grid-column:21" data-n="linux--t3-0.1.8-nightly.20261105.4205-linux-x64.tar.gz" data-s="118 MiB" data-d="a75235405d98" data-to="goes to linux\"></li><li class="col" style="--h:0.0149;--i:19;grid-column:22" data-n="linux--node-v24.22.2-linux-x64.tar.xz" data-s="31 MiB" data-d="48cc0e21e048" data-to="goes to linux\"></li><li class="col" style="--h:0.007;--i:20;grid-column:23" data-n="linux--gh_2.103.3_linux_amd64.deb" data-s="14 MiB" data-d="e3bafef96328" data-to="goes to linux\"></li><li class="col" style="--h:0.5655;--i:21;grid-column:25" data-n="caches--npm-cache.zip" data-s="1.13 GiB" data-d="ae0f0e5674a1" data-to="unzips to caches\npm-cache\"></li><li class="col" style="--h:0.4283;--i:22;grid-column:26" data-n="caches--pip-wheelhouse.zip" data-s="877 MiB" data-d="88f9545217b8" data-to="unzips to caches\pip-wheelhouse\"></li><li class="col" style="--h:0.1591;--i:23;grid-column:27" data-n="caches--playwright-browsers.zip" data-s="326 MiB" data-d="56df53d3ef87" data-to="unzips to caches\playwright-browsers\"></li><li class="col" style="--h:0.1429;--i:24;grid-column:28" data-n="caches--playwright-browsers-linux.zip" data-s="293 MiB" data-d="44398af58246" data-to="unzips to caches\playwright-browsers-linux\"></li><li class="col" style="--h:0.069;--i:25;grid-column:29" data-n="caches--t3-tools-win.zip" data-s="141 MiB" data-d="62d8d9109f9e" data-to="unzips to caches\t3-tools-win\"></li><li class="col" style="--h:0.0678;--i:26;grid-column:30" data-n="caches--t3-tools-linux.zip" data-s="139 MiB" data-d="caba236e09af" data-to="unzips to caches\t3-tools-linux\"></li><li class="col" style="--h:0.0264;--i:27;grid-column:31" data-n="caches--mcp-bin.zip" data-s="54 MiB" data-d="956a522783bd" data-to="unzips to caches\mcp-bin\"></li><li class="col" style="--h:0.0155;--i:28;grid-column:32" data-n="caches--lsp-bin.zip" data-s="32 MiB" data-d="8e41f89c4dae" data-to="unzips to caches\lsp-bin\"></li><li class="col" style="--h:0.0094;--i:29;grid-column:33" data-n="caches--claude-plugins.zip" data-s="19 MiB" data-d="ad44c02933f8" data-to="unzips to caches\claude-plugins\"></li><li class="col" style="--h:0.0063;--i:30;grid-column:34" data-n="caches--npm.zip" data-s="13 MiB" data-d="070a23df1065" data-to="unzips to caches\npm\"></li><li class="col" style="--h:0.002;--i:31;grid-column:35" data-n="caches--claude-skills.zip" data-s="4.2 MiB" data-d="493c7cceb6f9" data-to="unzips to caches\claude-skills\"></li><li class="col" style="--h:0.0016;--i:32;grid-column:36" data-n="caches--claude-code-docs.zip" data-s="3.2 MiB" data-d="448f5add69a7" data-to="unzips to caches\claude-code-docs\"></li><li class="col" style="--h:0.0001;--i:33;grid-column:37" data-n="caches--t3-userdata.zip" data-s="147 KiB" data-d="fc03e65eb56e" data-to="unzips to caches\t3-userdata\"></li><li class="col part" style="--h:0.9277;--i:34;grid-column:39;--dx:0;--dy:0;--hw:1.973" data-n="wsl--ubuntu-dev.tar.gz.part1" data-s="1.86 GiB" data-d="f65920ab965d" data-to="joined into wsl\ubuntu-dev.tar.gz"></li><li class="col part" style="--h:0.9277;--i:35;grid-column:40;--dx:1;--dy:0.9277;--hw:1.973" data-n="wsl--ubuntu-dev.tar.gz.part2" data-s="1.86 GiB" data-d="0307385c58a3" data-to="joined into wsl\ubuntu-dev.tar.gz"></li><li class="col part" style="--h:0.1176;--i:36;grid-column:41;--dx:2;--dy:1.8555;--hw:1.973" data-n="wsl--ubuntu-dev.tar.gz.part3" data-s="241 MiB" data-d="c82474cd212d" data-to="joined into wsl\ubuntu-dev.tar.gz"></li><li class="col" style="--h:0;--i:37;grid-column:42" data-n="wsl--ubuntu-dev.tar.gz.sha256" data-s="88 bytes" data-d="02c23d9510b7" data-to="checks the joined ubuntu-dev.tar.gz"></li><li class="col" style="--h:0.1712;--i:38;grid-column:43" data-n="wsl--wsl.3.0.3.0.x64.msi" data-s="351 MiB" data-d="ae9772869742" data-to="goes to wsl\"></li><li class="col" style="--h:0.1661;--i:39;grid-column:44" data-n="wsl--ubuntu-noble-wsl-amd64-wsl.rootfs.tar.gz" data-s="340 MiB" data-d="8251e27ffff3" data-to="goes to wsl\"></li><li class="col" style="--h:0;--i:40;grid-column:45" data-n="wsl--ubuntu-noble-SHA256SUMS" data-s="642 bytes" data-d="337176fdeda3" data-to="goes to wsl\"></li></ol><ol class="groups" aria-hidden="true"><li style="grid-column:1 / 3"><b>repo</b> <span>2</span></li><li style="grid-column:4 / 16"><b>windows\</b> <span>12</span></li><li style="grid-column:17 / 24"><b>linux\</b> <span>7</span></li><li style="grid-column:25 / 38"><b>caches\</b> <span>13</span></li><li style="grid-column:39 / 46"><b>wsl\</b> <span>7</span></li></ol></div><div class="plan-foot" data-pack="Packing v1.0.2: 41 assets, 9.84 GiB" data-done="Release v1.0.2 is consistent: 41 assets, digests match SHA256SUMS.txt." data-over="ubuntu-dev.tar.gz is 3.95 GiB: over GitHub&#x27;s 2 GiB limit" data-split="package-release.ps1 cuts it into 3 parts, plus a .sha256 to check the join" data-count="41"><p class="readout" id="readout" aria-live="polite">Release v1.0.2 is consistent: 41 assets, digests match SHA256SUMS.txt.</p></div><!-- /gen:plan -->
+      <figcaption>
+        <span>Each column is one file on the release, drawn to scale and grouped by the folder it unpacks to. Point at one, tap it, or focus the plan and use the arrow keys to read its name, size and digest. The animation replays what the build did; it doesn't check anything live.</span>
+        <button class="replay" type="button" id="replay">Replay the build</button>
+      </figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="install" id="install" aria-labelledby="install-h">
+  <div class="wrap">
+    <h2 id="install-h">Install</h2>
+    <div class="install-grid">
+      <ol class="steps">
+        <li>
+          <h3>Get the scripts</h3>
+          <p>Clone this repo, or download <code>repo--agent-toolkit-*.zip</code> from the <a href="https://github.com/Real-Fruit-Snacks/agent-toolkit/releases/latest">latest release</a> and extract it. Run the rest from its root.</p>
+        </li>
+        <li>
+          <h3>Download the release</h3>
+          <div class="cmd"><code>.\scripts\download-release.ps1 -To C:\toolkit-assets</code><button class="copy" type="button" data-copy=".\scripts\download-release.ps1 -To C:\toolkit-assets">Copy</button></div>
+          <p>Every asset into one folder, through the GitHub CLI if it's there and plain HTTPS if not. A file already there is kept only if its hash matches.</p>
+        </li>
+        <li>
+          <h3>Check it and restore the folders</h3>
+          <div class="cmd"><code>.\scripts\unpack-release.ps1 -From C:\toolkit-assets</code><button class="copy" type="button" data-copy=".\scripts\unpack-release.ps1 -From C:\toolkit-assets">Copy</button></div>
+          <p>Checks every file against <code>SHA256SUMS.txt</code>, joins the distro's parts and checks the result, then puts each asset back into <code>windows\</code>, <code>linux\</code>, <code>wsl\</code> or <code>caches\</code>.</p>
+        </li>
+        <li id="platforms">
+          <h3>Install, from an elevated PowerShell</h3>
+          <div class="tabs" role="tablist" aria-label="Platform">
+            <button type="button" role="tab" id="tab-win" aria-controls="pane-win" aria-selected="true">Windows</button>
+            <button type="button" role="tab" id="tab-wsl" aria-controls="pane-wsl" aria-selected="false" tabindex="-1">WSL</button>
+            <button type="button" role="tab" id="tab-lin" aria-controls="pane-lin" aria-selected="false" tabindex="-1">Linux</button>
+          </div>
+          <div class="pane" role="tabpanel" id="pane-win" aria-labelledby="tab-win">
+            <div class="cmd"><code>.\scripts\install-windows.ps1</code><button class="copy" type="button" data-copy=".\scripts\install-windows.ps1">Copy</button></div>
+            <p>Installs the apps silently, restores the tool and browser caches, installs the MCP servers, plugins and skills offline, seeds config only where none exists, and sets the variables that turn off the updaters and telemetry. Open a new terminal afterwards.</p>
+          </div>
+          <div class="pane" role="tabpanel" id="pane-wsl" aria-labelledby="tab-wsl">
+            <div class="cmd"><code>.\scripts\setup-wsl.ps1</code><button class="copy" type="button" data-copy=".\scripts\setup-wsl.ps1">Copy</button></div>
+            <p>Installs WSL from the bundled MSI and imports <code>ubuntu-dev</code>, a distro that already has Git, Node, the GitHub CLI and the Claude Code CLI inside it. The first time WSL is turned on, Windows may want a reboot.</p>
+          </div>
+          <div class="pane" role="tabpanel" id="pane-lin" aria-labelledby="tab-lin">
+            <div class="cmd"><code>sudo bash scripts/install-linux.sh</code><button class="copy" type="button" data-copy="sudo bash scripts/install-linux.sh">Copy</button></div>
+            <p>For a standalone Debian or Ubuntu machine, with <code>linux/</code> and <code>caches/</code> restored: installs T3 Code from the <code>.deb</code> and provisions the same tools as the WSL distro.</p>
+          </div>
+        </li>
+      </ol>
+
+      <figure class="log">
+        <figcaption>What <code>install-windows.ps1</code> printed on a clean GitHub Actions Windows runner, in the v1.0.2 build's smoke test. The runner skips the app installers and the environment (<code>-SkipApps -SkipEnv</code>); the rest ran. Trimmed where it says so.</figcaption>
+<pre><code><span class="h">== Restoring T3 tool cache</span>
+<span class="h">== Restoring T3 manifest snapshots</span>
+<span class="h">== Restoring Playwright browsers</span>
+<span class="h">== Installing npm packages from the seeded cache</span>
+<span class="w">WARNING: global npm install of agent-device from the cache failed; T3 still works from its own tool cache</span>
+<span class="w">WARNING: global npm install of expo-device-hub from the cache failed; T3 still works from its own tool cache</span>
+<span class="h">== Installing Claude Code skills</span>
+<span class="h">== Installing Python packages for the document skills</span>
+<span class="h">== MCP servers</span>
+<span class="h">== npm MCP servers (19)</span>
+  <span class="ok">ok</span>  playwright
+  <span class="ok">ok</span>  chrome-devtools
+  <span class="ok">ok</span>  filesystem
+<span class="cut">  (16 more, all ok)</span>
+<span class="h">== Python MCP servers -&gt; ~\.venv-mcp\&lt;id&gt;</span>
+  <span class="ok">ok</span>  git
+  <span class="ok">ok</span>  fetch
+<span class="cut">  (15 more, all ok)</span>
+<span class="h">== registered 6 default MCP server(s) in C:\Users\runneradmin\.claude.json</span>
+<span class="h">== catalog: C:\Users\runneradmin\agent-toolkit-docs\mcp-servers.md</span>
+<span class="h">== Claude Code plugin marketplaces and language servers</span>
+<span class="h">== Claude Code plugins</span>
+  marketplace atk-core-plugins             <span class="ok">ok</span>
+  marketplace atk-knowledge-work           <span class="ok">ok</span>
+<span class="cut">  (5 more marketplaces and 12 plugins, all ok)</span>
+<span class="h">== Language servers for the LSP plugins</span>
+  lsp npm     pyright: <span class="ok">ok</span>
+  lsp npm     typescript-language-server: <span class="ok">ok</span>
+  lsp npm     typescript: <span class="ok">ok</span>
+  lsp bin     rust-analyzer: C:\Users\runneradmin\.local\bin\rust-analyzer.exe
+  verified    12/12 plugins enabled and loading
+<span class="h">== Placing offline docs</span>
+<span class="h">== Seeding T3 Code settings (only files that do not exist yet)</span>
+<span class="h">== Seeding Claude Code config (skips onboarding; no account data)</span>
+
+Done. Open a NEW terminal, then launch T3 Code.
+In Settings &gt; Providers &gt; Claude set Binary path to:
+  C:\Users\runneradmin\.local\bin\claude.exe
+and add the endpoint variables from config\claude-provider-env.example.
+Offline docs: C:\Users\runneradmin\agent-toolkit-docs</code></pre>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<section class="whats" id="whats">
+  <div class="wrap">
+    <div class="whats-head">
+      <h2>Pinned in v1.0.2</h2>
+      <p>Read from the release's own <a href="https://github.com/Real-Fruit-Snacks/agent-toolkit/blob/main/VERSIONS.md">VERSIONS.md</a>, which lists every file with its SHA-256. This page is rewritten each time a release is published.</p>
+    </div>
+    <div class="whats-grid">
+      <table class="pins">
+        <caption class="sr-only">Pinned versions</caption>
+        <thead><tr><th scope="col">Component</th><th scope="col">Version</th></tr></thead>
+        <!-- gen:pins --><tbody><tr><th scope="row">T3 Code</th><td><code>0.1.8-nightly.20261105.4205</code></td></tr><tr><th scope="row">Claude Code CLI</th><td><code>2.1.318</code></td></tr><tr><th scope="row">Node.js</th><td><code>v24.22.2</code></td></tr><tr><th scope="row">Git for Windows</th><td><code>2.56.0.4</code></td></tr><tr><th scope="row">GitHub CLI</th><td><code>2.103.3</code></td></tr><tr><th scope="row">PowerShell 7</th><td><code>7.6.9</code></td></tr><tr><th scope="row">Python</th><td><code>3.13.17</code></td></tr><tr><th scope="row">WSL platform</th><td><code>3.0.3.0</code></td></tr><tr><th scope="row">Ubuntu for WSL</th><td><code>noble</code></td></tr><tr><th scope="row">T3 tool cache</th><td><code>agent-device 0.21.31, chrome-headless-shell 156.0.8078.80, expo-device-hub 0.19.1</code></td></tr><tr><th scope="row">Playwright</th><td><code>1.64.1 with chromium_headless_shell-1248 and chromium-1248</code></td></tr></tbody><!-- /gen:pins -->
+      </table>
+      <div class="bundle">
+        <ul class="qtys">
+          <!-- gen:counts --><li><b class="qty">36</b><span><strong>MCP servers</strong>, 6 registered by default, the rest one <code>claude mcp add</code> away</span></li><li><b class="qty">239</b><span><strong>plugins</strong> from 7 vendored marketplaces, 12 enabled</span></li><!-- /gen:counts -->
+          <li><b class="qty">3</b><span><strong>language servers</strong> for the LSP plugins: pyright, typescript-language-server and rust-analyzer</span></li>
+        </ul>
+        <p><strong>Skills</strong>, in <code>~/.claude/skills</code>: <!-- gen:skills -->the public anthropics/skills set (Apache-2.0), t3dotgg/tstack (MIT) and killer-council from skills/ in this repo (MIT)<!-- /gen:skills -->, with a Python wheelhouse for their dependencies.</p>
+        <p><strong>Also</strong> a seeded npm cache so all of it installs with <code>--offline</code>, the Claude Code and T3 Code docs as markdown, and Linux copies of the T3 tool cache and the Playwright browsers.</p>
       </div>
     </div>
-    <div class="term" aria-label="Example: the Windows install script running">
-      <div class="bar"><i></i><i></i><i></i><span>pwsh</span></div>
-<pre><code><span class="a">$</span> .\scripts\install-windows.ps1
-<span class="c">==</span> Installing Node.js
-<span class="c">==</span> Installing Git for Windows
-<span class="c">==</span> Installing T3 Code
-<span class="c">==</span> Installing Claude Code CLI
-<span class="c">==</span> Restoring T3 tool cache
-<span class="c">==</span> Restoring Playwright browsers
-<span class="c">==</span> Installing Claude Code skills
-<span class="s">ok</span> done. open a new terminal</code></pre>
-    </div>
-  </div>
-</div>
 
-<section id="why">
-  <div class="wrap two">
-    <div>
-      <p class="label">Why</p>
-      <h2>One version of everything</h2>
-    </div>
-    <div>
-      <p>Each tool here fetches something on first run: an updater, a headless browser, a device agent, a model manifest. On a machine that should stay on a known build, or reach only one endpoint, those fetches are a problem. This bundles them, so the only thing the install downloads is nothing.</p>
-      <p class="mute">The Claude Code provider's endpoint is set per instance in T3 Code. Templates for an Anthropic-compatible gateway, Bedrock and Vertex are in <code>config/claude-provider-env.example</code>.</p>
-    </div>
+    <details class="more">
+      <summary>The plugin marketplaces</summary>
+      <p>Vendored, so they install and load offline. Their remote MCP connectors are turned off; each marketplace's <code>VENDORED.md</code> says what changed. Three are renamed with an <code>atk-</code> prefix because Claude Code reserves the upstream names for copies loaded from GitHub. Browse and enable the rest with <code>/plugin</code>.</p>
+      <div class="scroll"><table>
+        <thead><tr><th scope="col">Marketplace</th><th scope="col">Upstream</th><th scope="col" class="n">Plugins</th><th scope="col">Enabled</th></tr></thead>
+        <!-- gen:markets --><tbody><tr><th scope="row"><code>atk-core-plugins</code></th><td>anthropics/claude-plugins-official</td><td class="n">49</td><td>feature-dev, code-review, pr-review-toolkit, commit-commands, code-simplifier, claude-md-management, security-guidance, pyright-lsp, typescript-lsp, rust-analyzer-lsp</td></tr><tr><th scope="row"><code>atk-knowledge-work</code></th><td>anthropics/knowledge-work-plugins</td><td class="n">22</td><td>engineering</td></tr><tr><th scope="row"><code>superpowers-dev</code></th><td>obra/superpowers</td><td class="n">1</td><td>superpowers</td></tr><tr><th scope="row"><code>claude-code-workflows</code></th><td>wshobson/agents</td><td class="n">92</td><td>none</td></tr><tr><th scope="row"><code>voltagent-subagents</code></th><td>VoltAgent/awesome-claude-code-subagents</td><td class="n">10</td><td>none</td></tr><tr><th scope="row"><code>trailofbits</code></th><td>trailofbits/skills</td><td class="n">46</td><td>none</td></tr><tr><th scope="row"><code>atk-financial-services</code></th><td>anthropics/financial-services</td><td class="n">19</td><td>none</td></tr></tbody><!-- /gen:markets -->
+      </table></div>
+    </details>
+    <details class="more">
+      <summary>The MCP servers</summary>
+      <p>Bold ones are registered in Claude Code by default. Every one, registered or not, is written to <code>~/agent-toolkit-docs/mcp-servers.md</code> with its <code>claude mcp add</code> line. Cloud-backed servers that need a vendor's service are left out on purpose.</p>
+      <div class="mcp"><!-- gen:mcp --><p><span class="k">From npm</span> <b>playwright</b>, chrome-devtools, filesystem, <b>memory</b>, <b>sequential-thinking</b>, <b>desktop-commander</b>, dbhub, mongodb, kubernetes, gitlab, task-master, mcp-remote, inspector, jetbrains, nx, azure-devops, code-runner, sentry, pdf</p><p><span class="k">From PyPI</span> git, <b>fetch</b>, time, <b>markitdown</b>, atlassian, serena, redis, duckdb, word, powerpoint, excel, jupyter, prometheus, docker, semgrep</p><p><span class="k">As binaries</span> github, grafana</p><!-- /gen:mcp --></div>
+    </details>
+    <details class="more">
+      <summary>All <!-- gen:asset-count -->41<!-- /gen:asset-count --> release assets and their SHA-256</summary>
+      <p>The same digests GitHub records for each upload; <code>verify-release.ps1</code> checks them against the release's <code>SHA256SUMS.txt</code> before anything is published.</p>
+      <div class="scroll"><table class="assets">
+        <thead><tr><th scope="col">Asset</th><th scope="col" class="n">Size</th><th scope="col">SHA-256</th></tr></thead>
+        <!-- gen:assets --><tbody><tr><td><code>repo--agent-toolkit-v1.0.2.zip</code></td><td class="n">860 KiB</td><td><code class="sha">c90a29167b0c3081af066291a394c899b771cf4edc98404b460950597936170f</code></td></tr><tr><td><code>SHA256SUMS.txt</code></td><td class="n">3.9 KiB</td><td><code class="sha">324b2eec303738802d086d6050fef4201b29ff531dac2862ac86a70878174ec2</code></td></tr><tr><td><code>windows--claude-2.1.318-win32-x64.exe</code></td><td class="n">327 MiB</td><td><code class="sha">b9aa5b08dc2cc46ea77d334dce792d1b8fdbb3a43bb290efdebdc905b1181082</code></td></tr><tr><td><code>windows--T3-Code-0.1.8-nightly.20261105.4205-x64.exe</code></td><td class="n">278 MiB</td><td><code class="sha">0b01c19dca2f2181e2dd6c1697679d1c1aae83216c13f4565adca90d4a0d9897</code></td></tr><tr><td><code>windows--T3-Code-0.1.8-nightly.20261105.4205-x64.zip</code></td><td class="n">187 MiB</td><td><code class="sha">c1596d067a61c6de32c9917f40f53215d7afa79dcef8321d73b89f0a9a327c3d</code></td></tr><tr><td><code>windows--PowerShell-7.6.9-win-x64.msi</code></td><td class="n">112 MiB</td><td><code class="sha">50d33c7494aaf82b987cfd4de3f232d04f91fdd4c0deeca8a669cced3e7cf8f9</code></td></tr><tr><td><code>windows--t3-0.1.8-nightly.20261105.4205-win32-x64.zip</code></td><td class="n">108 MiB</td><td><code class="sha">dc238d3cc5cd4add19c4dd336623c6bbdaf381fad3781c06042fa747f9bc59df</code></td></tr><tr><td><code>windows--Git-2.56.0.4-64-bit.exe</code></td><td class="n">64 MiB</td><td><code class="sha">4961a4a8cc778d8b6e00a5819e5fe4d078b754555aff7aedc2d77a5d74c2de80</code></td></tr><tr><td><code>windows--node-v24.22.2-x64.msi</code></td><td class="n">32 MiB</td><td><code class="sha">9231bf64d19bef391dd5ee8af65411d3799c3c44a842d2320849cc1da60b6b6d</code></td></tr><tr><td><code>windows--python-3.13.17-amd64.exe</code></td><td class="n">29 MiB</td><td><code class="sha">5da012101ba2e17113a9a1cd901e9ce1441086f2b7ecb5de06ec94163899a190</code></td></tr><tr><td><code>windows--gh_2.103.3_windows_amd64.msi</code></td><td class="n">15 MiB</td><td><code class="sha">5073112b7abb5ffbba24b76aee7e89269af531218c0a42751f5f0bfb6440c2cc</code></td></tr><tr><td><code>windows--SHASUMS256-node-v24.22.2.txt</code></td><td class="n">3.1 KiB</td><td><code class="sha">aec92ae945293821c22aed4c37b97741688254bac353b861fc9fb25b81ce4567</code></td></tr><tr><td><code>windows--SHA256SUMS</code></td><td class="n">571 bytes</td><td><code class="sha">92233746261cf03422a42263e0630cb3651747951cd315af92d1079add0c9e47</code></td></tr><tr><td><code>windows--nightly.yml</code></td><td class="n">436 bytes</td><td><code class="sha">a219b50271959d2e66924c4883c91d03f70a0578a2b5550b1b0a48b74815a6ef</code></td></tr><tr><td><code>linux--claude-2.1.318-linux-x64</code></td><td class="n">322 MiB</td><td><code class="sha">708c77b204db30086ff6f1ed34577bda03e1be74ced80557cbf7b54249ebf0bd</code></td></tr><tr><td><code>linux--claude-2.1.318-linux-x64-musl</code></td><td class="n">309 MiB</td><td><code class="sha">e6ff03823153a699d708c88c2fa87d18a1f6b45f13b14a985a221f8af442dd54</code></td></tr><tr><td><code>linux--T3-Code-0.1.8-nightly.20261105.4205-x86_64.AppImage</code></td><td class="n">183 MiB</td><td><code class="sha">fbc5ebb0bae496d3b0e7e130043544019d46ba672214f233f40fc65c2fba247d</code></td></tr><tr><td><code>linux--T3-Code-0.1.8-nightly.20261105.4205-amd64.deb</code></td><td class="n">153 MiB</td><td><code class="sha">8a749230371d20c41445ab1b3ca2a4ddb002f9acee33a65bea56837444889cb2</code></td></tr><tr><td><code>linux--t3-0.1.8-nightly.20261105.4205-linux-x64.tar.gz</code></td><td class="n">118 MiB</td><td><code class="sha">a75235405d988cee035bc12d0984bf4a5de240025d1f5e0347fb947b2efe9d27</code></td></tr><tr><td><code>linux--node-v24.22.2-linux-x64.tar.xz</code></td><td class="n">31 MiB</td><td><code class="sha">48cc0e21e048790e54c0cf5749c2725005313d652651c40b7a21feb9697aaf75</code></td></tr><tr><td><code>linux--gh_2.103.3_linux_amd64.deb</code></td><td class="n">14 MiB</td><td><code class="sha">e3bafef96328d1a67de3a968bdfe1cc2ffd58cf6aba8b5e201356897ed06bb3d</code></td></tr><tr><td><code>caches--npm-cache.zip</code></td><td class="n">1.13 GiB</td><td><code class="sha">ae0f0e5674a1a65ff1334471d943c7101d7de9aef8591627d2c0a563092e2293</code></td></tr><tr><td><code>caches--pip-wheelhouse.zip</code></td><td class="n">877 MiB</td><td><code class="sha">88f9545217b8dca1c7a0c98e879eae4d5eb08247786393fa0c652bcfab533636</code></td></tr><tr><td><code>caches--playwright-browsers.zip</code></td><td class="n">326 MiB</td><td><code class="sha">56df53d3ef87abac8a1da02b8d99ebafe86c5d934ddd907e3085db38abc5f416</code></td></tr><tr><td><code>caches--playwright-browsers-linux.zip</code></td><td class="n">293 MiB</td><td><code class="sha">44398af5824654c8155e2972ff03f9db3d46dbc0433800552887be79051d61af</code></td></tr><tr><td><code>caches--t3-tools-win.zip</code></td><td class="n">141 MiB</td><td><code class="sha">62d8d9109f9e0b05367b0fa2536ecbb430db57333d96e05bcf97f6750f33e9f4</code></td></tr><tr><td><code>caches--t3-tools-linux.zip</code></td><td class="n">139 MiB</td><td><code class="sha">caba236e09af9e698879807507ecfd48891eb3f5e9c373f3b11e6914570ea83a</code></td></tr><tr><td><code>caches--mcp-bin.zip</code></td><td class="n">54 MiB</td><td><code class="sha">956a522783bdea2a7ad1efb6b346aff8f8cb35e77b88ada7976c832c8768ecdd</code></td></tr><tr><td><code>caches--lsp-bin.zip</code></td><td class="n">32 MiB</td><td><code class="sha">8e41f89c4dae48a1c5373461326ecda3ff2f26aa3aa3d1c48eb4fad01524356d</code></td></tr><tr><td><code>caches--claude-plugins.zip</code></td><td class="n">19 MiB</td><td><code class="sha">ad44c02933f8d3efb8bceb9e31750e8b4ba303d174c490b240984d1bf0c84fe9</code></td></tr><tr><td><code>caches--npm.zip</code></td><td class="n">13 MiB</td><td><code class="sha">070a23df1065e08ae17804e782d2dc08c68f1f29491e83e0e3f10bba5432f292</code></td></tr><tr><td><code>caches--claude-skills.zip</code></td><td class="n">4.2 MiB</td><td><code class="sha">493c7cceb6f97a219699ee768e2dfab7752b3674da156de72cb3089c37a0cd10</code></td></tr><tr><td><code>caches--claude-code-docs.zip</code></td><td class="n">3.2 MiB</td><td><code class="sha">448f5add69a7296d63eae1e4c3a4fe6a62836a6d875012d6b4149011d3720559</code></td></tr><tr><td><code>caches--t3-userdata.zip</code></td><td class="n">147 KiB</td><td><code class="sha">fc03e65eb56e1e23d3cf167f5cf0f5120080f138eca3246594026a852dbaf4e4</code></td></tr><tr><td><code>wsl--ubuntu-dev.tar.gz.part1</code></td><td class="n">1.86 GiB</td><td><code class="sha">f65920ab965de3e9c21973984586a80705bfeb314004c5db985f3aa64c37eda6</code></td></tr><tr><td><code>wsl--ubuntu-dev.tar.gz.part2</code></td><td class="n">1.86 GiB</td><td><code class="sha">0307385c58a3ea66ed7933feb6b3d82c357a1e768fbfaa1adb85067a195b8417</code></td></tr><tr><td><code>wsl--ubuntu-dev.tar.gz.part3</code></td><td class="n">241 MiB</td><td><code class="sha">c82474cd212d4def38f000aa8d0fa854131a4503b06e401237279d620094e7b2</code></td></tr><tr><td><code>wsl--ubuntu-dev.tar.gz.sha256</code></td><td class="n">88 bytes</td><td><code class="sha">02c23d9510b7576246db581e663d15700ee49699f9c07c81574f652a84efacbd</code></td></tr><tr><td><code>wsl--wsl.3.0.3.0.x64.msi</code></td><td class="n">351 MiB</td><td><code class="sha">ae977286974255bd26bf925f00f40f5692c6b2084155cbc0563c09aea091f211</code></td></tr><tr><td><code>wsl--ubuntu-noble-wsl-amd64-wsl.rootfs.tar.gz</code></td><td class="n">340 MiB</td><td><code class="sha">8251e27ffff381a4af5f41dcb94d867de3e0d9774a9241908ab34555d99315ea</code></td></tr><tr><td><code>wsl--ubuntu-noble-SHA256SUMS</code></td><td class="n">642 bytes</td><td><code class="sha">337176fdeda3dbbf7bd36146894c03670d5ed8cffc2bd804f39d4c4ace0d424f</code></td></tr></tbody><!-- /gen:assets -->
+      </table></div>
+    </details>
   </div>
 </section>
 
-<section id="whats">
+<section class="why" id="why" aria-labelledby="why-h">
   <div class="wrap">
-    <p class="label">What's in it</p>
-    <h2>Pinned in v1.0.2</h2>
-    <table>
-      <tr><th>Component</th><th>Version</th></tr>
-      <tr><td>T3 Code</td><td><code>0.1.7-nightly.20261101.4035</code></td></tr>
-      <tr><td>Claude Code CLI</td><td><code>2.1.316</code></td></tr>
-      <tr><td>Node.js</td><td><code>24.22.2</code></td></tr>
-      <tr><td>Git for Windows</td><td><code>2.56.0.4</code></td></tr>
-      <tr><td>GitHub CLI</td><td><code>2.103.3</code></td></tr>
-      <tr><td>PowerShell 7</td><td><code>7.6.9</code></td></tr>
-      <tr><td>Python</td><td><code>3.14.10</code></td></tr>
-      <tr><td>WSL platform</td><td><code>3.0.3</code></td></tr>
-      <tr><td>Ubuntu, plus a provisioned export</td><td><code>24.04 noble</code></td></tr>
-      <tr><td>T3 tool cache</td><td><code>chrome-headless-shell, agent-device, expo-device-hub</code></td></tr>
-      <tr><td>Playwright browsers</td><td><code>chromium, chromium-headless-shell</code></td></tr>
-      <tr><td>Claude Code skills</td><td><code>anthropics/skills</code>, <code>t3dotgg/tstack</code> and <code>Real-Fruit-Snacks/killer-skills</code>, plus a Python wheelhouse and seeded npm cache</td></tr>
-      <tr><td>Claude Code plugins</td><td><code>239 offline across 7 marketplaces: Anthropic official, superpowers, wshobson, VoltAgent, Trail of Bits; 12 enabled</code></td></tr>
-      <tr><td>Language servers</td><td><code>pyright, typescript-language-server, rust-analyzer</code></td></tr>
-      <tr><td>MCP servers</td><td><code>36: Playwright, DevTools, DBHub, MongoDB, Redis, DuckDB, Kubernetes, GitLab, GitHub, Azure DevOps, Atlassian, Grafana, Sentry, Serena, Office docs and more</code></td></tr>
-      <tr><td>Offline docs</td><td><code>Claude Code docs, T3 Code user docs</code></td></tr>
-    </table>
-    <p class="mute" style="margin-top:14px">Every file and its SHA256 is in <a href="https://github.com/Real-Fruit-Snacks/agent-toolkit/blob/main/VERSIONS.md">VERSIONS.md</a>. Rebuild the whole set from a connected machine with <code>scripts/collect.ps1</code>.</p>
+    <h2 id="why-h" class="sr-only">Why pin everything</h2>
+    <p class="statement">Each of these tools fetches something the first time it runs: an updater, a headless browser, a device agent, a model manifest. On a machine that should stay on one known build, or talk to one endpoint, those fetches are the problem. The release carries them all.</p>
+    <div class="why-rest">
+      <p>The install sets these as user environment variables, among others. The full list, with what each one turns off, is in <a href="https://github.com/Real-Fruit-Snacks/agent-toolkit/blob/main/config/env-vars.md">config/env-vars.md</a>.</p>
+      <pre><code>T3CODE_DISABLE_AUTO_UPDATE=1
+T3CODE_TELEMETRY_ENABLED=0
+DISABLE_AUTOUPDATER=1
+CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1
+PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
+npm_config_offline=true
+PIP_NO_INDEX=1</code></pre>
+      <p>The Claude Code provider's endpoint is set per instance in T3 Code, under Settings, Providers, Claude. Templates for an Anthropic-compatible gateway, Bedrock and Vertex are in <code>config/claude-provider-env.example</code>.</p>
+    </div>
   </div>
 </section>
 
-<section id="platforms">
-  <div class="wrap two">
-    <div>
-      <p class="label">Platforms</p>
-      <h2>Three targets, one layout</h2>
-      <p class="mute">The folders in the repo mirror the release assets: <code>windows</code>, <code>linux</code>, <code>wsl</code>, <code>caches</code>. Pick the platform, download its assets, run its script.</p>
-    </div>
-    <ol class="steps">
-      <li><strong>Windows.</strong> The install script installs the apps silently, restores the tool and browser caches, and sets the environment variables.</li>
-      <li><strong>WSL.</strong> <code>setup-wsl.ps1</code> installs the WSL platform from the bundled MSI and imports a distro that already has Git, Node, the GitHub CLI and the Claude Code CLI inside it.</li>
-      <li><strong>Linux.</strong> <code>install-linux.sh</code> installs T3 Code from the deb and provisions the same tools on a standalone Debian or Ubuntu machine.</li>
+<section class="build" id="build" aria-labelledby="build-h">
+  <div class="wrap">
+    <h2 id="build-h">How a release is built</h2>
+    <p class="build-lede">By <a href="https://github.com/Real-Fruit-Snacks/agent-toolkit/blob/main/.github/workflows/weekly-release.yml">weekly-release.yml</a>, on GitHub's runners. It publishes only after every check below has passed; a failed check stops it before anything is published.</p>
+    <ol class="route">
+      <li>
+        <p class="when"><b>schedule</b> Sundays, 08:00 UTC</p>
+        <div><h3>Start</h3><p>On its own every week, or by hand from the Actions tab with a pinned T3 tag or Claude Code version, and publishing off to leave a draft for review.</p></div>
+      </li>
+      <li>
+        <p class="when"><b>collect</b> Windows runner</p>
+        <div><h3>Fetch everything</h3><p><code>collect.ps1</code> downloads the newest T3 nightly, Claude Code, the installers, the plugin marketplaces, the MCP servers and every cache, and reconciles the versions.</p></div>
+      </li>
+      <li>
+        <p class="when"><b>distro</b> Ubuntu runner</p>
+        <div><h3>Bake the Linux side</h3><p>Builds the Linux wheelhouse natively and the provisioned Ubuntu image in a chroot, then opens the image and checks it: the default MCP servers registered, at least 12 plugins enabled, the skills and binaries in place.</p></div>
+      </li>
+      <li>
+        <p class="when"><b>publish</b> Windows runner</p>
+        <div><h3>Install, pack, verify, publish</h3><p>Runs the T3 and Claude Code binaries and <code>check-pins.ps1</code>, then <code>install-windows.ps1</code> on the clean runner and checks what it registered. Writes <code>VERSIONS.md</code>, packs the assets and cuts any of 1900&nbsp;MiB or more into parts, uploads a draft, and has <code>verify-release.ps1</code> compare every digest GitHub recorded with <code>SHA256SUMS.txt</code>. Only then it publishes, and rewrites this page.</p></div>
+      </li>
     </ol>
   </div>
 </section>
 
-<section id="tested">
-  <div class="wrap two">
+<section class="tested" id="tested" aria-labelledby="tested-h">
+  <div class="wrap">
     <div>
-      <p class="label">Tested on</p>
+      <h2 id="tested-h">Tested on</h2>
       <ul class="plain">
-        <li>Windows 11 Pro 26300 · Windows PowerShell 5.1: the bake, collect and pin checks run here</li>
-        <li>Ubuntu 24.04 noble under WSL 2: the distro is baked and its contents verified here</li>
-        <li><em>Not</em> tested: a full install from the release assets on a second machine, end to end</li>
+        <li>Windows 11 Pro 26300 with Windows PowerShell 5.1: the bake, collect and pin checks run here.</li>
+        <li>Ubuntu 24.04 noble under WSL 2: the distro is baked and its contents checked here.</li>
+        <li>A clean GitHub Actions Windows runner: every weekly build runs the install script there and checks the MCP servers, plugins, language servers and skills before it publishes.</li>
+        <li><strong>Not tested:</strong> a full install from the release assets on a second physical machine, end to end.</li>
       </ul>
     </div>
     <div>
-      <p class="label">Known issues</p>
+      <h2>Known issues</h2>
       <ul class="plain">
-        <li>The app installers use silent flags that are correct for the pinned versions; a newer installer may change them.</li>
-        <li>Importing the raw Ubuntu rootfs instead of the baked distro needs a network to fetch Playwright browsers.</li>
-        <li>T3 Code pins its on-demand tool versions per build. After bumping T3, run <code>scripts/check-pins.ps1 -Fix</code> or the cache is ignored and a download is attempted.</li>
+        <li>The app installers run with silent flags that are right for the pinned versions; a newer installer may change them.</li>
+        <li>T3 Code pins its on-demand tool versions per build. After bumping T3, run <code>scripts/check-pins.ps1 -Fix</code>, or the cache is ignored and a download is attempted.</li>
+        <li>Importing the raw Ubuntu rootfs instead of the baked distro needs a network to fetch the Playwright browsers.</li>
+        <li>On Linux without PowerShell, join the distro by hand: <code>cat name.part1 name.part2 name.part3 &gt; name</code>, then <code>sha256sum -c name.sha256</code>.</li>
+        <li>The Docker MCP server is Windows-only; its dependencies don't resolve on Ubuntu's Python 3.12.</li>
       </ul>
     </div>
   </div>
 </section>
+</main>
 
-<footer>
+<footer class="foot">
   <div class="wrap">
-    <span>MIT for the scripts · bundled binaries keep their own licenses · not affiliated with T3 Tools Inc or Anthropic · <a href="https://github.com/Real-Fruit-Snacks/agent-toolkit">Source</a></span>
-    <span><a href="https://real-fruit-snacks.github.io/">RFS</a> · Real tools. No filler. · <a href="https://github.com/Real-Fruit-Snacks/rfs-brand/blob/main/BRAND.md">Brand</a></span>
+    <p>MIT for the scripts and config in this repo. The installers, binaries and distro image on the releases keep their own licenses. Not affiliated with T3 Tools Inc or Anthropic.</p>
+    <p><a href="https://github.com/Real-Fruit-Snacks/agent-toolkit">Source</a> · <a href="https://github.com/Real-Fruit-Snacks/agent-toolkit/releases">Releases</a> · <a href="https://real-fruit-snacks.github.io/">Real-Fruit-Snacks</a></p>
   </div>
 </footer>
 
-<script src="assets/site.js"></script>
+<script src="script.js" defer></script>
 </body>
 </html>

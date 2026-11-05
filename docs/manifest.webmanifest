@@ -1,6 +1,6 @@
 {
-  "name": "RFS",
-  "short_name": "RFS",
+  "name": "agent-toolkit",
+  "short_name": "agent-toolkit",
   "icons": [
     {
       "src": "icon-192.png",
@@ -19,6 +19,6 @@
       "purpose": "maskable"
     }
   ],
-  "theme_color": "#0c0d10",
-  "background_color": "#0c0d10"
+  "theme_color": "#0C0D10",
+  "background_color": "#0C0D10"
 }

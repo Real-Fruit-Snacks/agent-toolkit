@@ -24,3 +24,4 @@ caches/pip-wheelhouse/*
 release/
 *.log
 !caches/pip-wheelhouse/requirements-mcp.txt
+__pycache__/
