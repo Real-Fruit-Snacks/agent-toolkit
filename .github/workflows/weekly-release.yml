@@ -309,4 +309,11 @@ jobs:
           $tag = '${{ steps.ver.outputs.tag }}'
           (Get-Content docs/index.html -Raw) -replace '<h2>Pinned in v[0-9.]+</h2>', "<h2>Pinned in $tag</h2>" | Set-Content docs/index.html -NoNewline
           git add docs/index.html
-          if (-not (git diff --cached --quiet)) { git commit -m "Page: point at $tag"; git push origin HEAD:main }
+          if (-not (git diff --cached --quiet)) {
+            git commit -m "Page: point at $tag"
+            # main can move during a long run; replay the commit on top before pushing
+            git fetch origin main
+            git rebase FETCH_HEAD
+            if ($LASTEXITCODE) { throw "page commit no longer applies on top of main" }
+            git push origin HEAD:main
+          }
