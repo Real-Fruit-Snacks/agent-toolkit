@@ -304,7 +304,13 @@ jobs:
         run: |
           $tag = '${{ steps.ver.outputs.tag }}'
           (Get-Content docs/index.html -Raw) -replace '<h2>Pinned in v[0-9.]+</h2>', "<h2>Pinned in $tag</h2>" | Set-Content docs/index.html -NoNewline
-          git add docs/index.html
+          # the published release's assets, sizes and digests, plus VERSIONS.md, onto the page and the README's load plan
+          python scripts/write-page.py --tag $tag
+          if ($LASTEXITCODE) { throw 'write-page.py failed' }
+          python -m pip install --quiet -r docs/art/requirements.txt
+          python docs/art/make-plan.py
+          if ($LASTEXITCODE) { throw 'make-plan.py failed' }
+          git add docs/index.html docs/release.json docs/assets/plan-dark.svg docs/assets/plan-light.svg
           if (-not (git diff --cached --quiet)) {
             git commit -m "Page: point at $tag"
             # main can move during a long run; replay the commit on top before pushing
