@@ -58,7 +58,7 @@ $lines += ''; $lines += '## Playwright browsers (caches/playwright-browsers)'; $
 foreach ($d in Get-ChildItem caches\playwright-browsers -Directory -ErrorAction SilentlyContinue) { $lines += "- $($d.Name)" }
 $lines += ''; $lines += '## Also in the release'; $lines += ''
 $lines += '- caches/npm-cache: seeded npm cache for offline installs of playwright, agent-device, expo-device-hub and the skill packages'
-$lines += '- caches/claude-skills: the public anthropics/skills set (Apache-2.0)'
+$lines += '- caches/claude-skills: the public anthropics/skills set (Apache-2.0), t3dotgg/tstack (MIT) and killer-council from skills/ in this repo (MIT)'
 $lines += '- caches/claude-code-docs: Claude Code documentation, markdown, from code.claude.com/docs/llms.txt'
 $lines += '- caches/pip-wheelhouse: Python wheels for the document skills and the Python MCP servers (win + linux)'
 $lines += '- MCP servers (config/mcp-servers.json): npm ones in the npm cache, Python ones in the wheelhouse, github-mcp-server binaries in caches/mcp-bin'

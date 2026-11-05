@@ -52,6 +52,10 @@ jobs:
       - uses: actions/setup-python@v5
         with: { python-version: '3.13' }
 
+      - name: test killer-council
+        shell: pwsh
+        run: python -I tests/killer-council/test_council.py
+
       - name: collect
         shell: pwsh
         run: |
@@ -117,6 +121,7 @@ jobs:
           sudo test -f /tmp/chk/etc/wsl.conf
           sudo test -d /tmp/chk/home/dev/.claude/skills/docx
           sudo test -f /tmp/chk/home/dev/.claude/skills/full-send/SKILL.md
+          sudo test -f /tmp/chk/home/dev/.claude/skills/killer-council/scripts/council.py
           sudo ls /tmp/chk/home/dev/.local/share/claude/versions/
           # what the provisioner registered, read from the image's own config
           sudo python3 - <<'PY'
@@ -224,6 +229,7 @@ jobs:
 
           if (-not (Test-Path (Join-Path $env:USERPROFILE '.claude\skills\docx\SKILL.md'))) { throw 'skills not installed' }
           if (-not (Test-Path (Join-Path $env:USERPROFILE '.claude\skills\full-send\SKILL.md'))) { throw 'tstack skills not installed' }
+          if (-not (Test-Path (Join-Path $env:USERPROFILE '.claude\skills\killer-council\scripts\council.py'))) { throw 'killer-council skill not installed' }
           if (-not (Test-Path (Join-Path $env:USERPROFILE 'agent-toolkit-docs\mcp-servers.md'))) { throw 'MCP catalog not written' }
 
       - name: next version
@@ -265,7 +271,7 @@ jobs:
             "",
             $pins,
             "",
-            "Also included: the public Claude Code skills set with a Python wheelhouse, a seeded npm cache, Claude Code and T3 Code docs as markdown, Linux copies of the browser and tool caches, and a provisioned Ubuntu distro for WSL.",
+            "Also included: the public Claude Code skills set with a Python wheelhouse, the tstack and killer-council skills, a seeded npm cache, Claude Code and T3 Code docs as markdown, Linux copies of the browser and tool caches, and a provisioned Ubuntu distro for WSL.",
             "",
             "Every file and its SHA256 is in VERSIONS.md and SHA256SUMS.txt. Built by the weekly-release workflow."
           ) | Set-Content release-notes.md
