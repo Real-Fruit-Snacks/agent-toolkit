@@ -163,18 +163,6 @@ foreach ($src in (Get-Content (Join-Path $root 'config\plugin-sources.json') -Ra
   $sources += "- $($src.repo) @ $sha ($($src.license)): $($names -join ', ')"
   Write-Host "  $($src.repo): $($names.Count) skills"
 }
-# skills kept in this repo, under skills/
-$own = @()
-foreach ($d in Get-ChildItem (Join-Path $root 'skills') -Directory -ErrorAction SilentlyContinue) {
-  if (Test-Path (Join-Path 'caches\claude-skills' $d.Name)) { throw "skill name clash: $($d.Name) from this repo" }
-  Copy-Item $d.FullName (Join-Path 'caches\claude-skills' $d.Name) -Recurse -Force
-  $own += $d.Name
-}
-if ($own) {
-  $sha = (git -C $root rev-parse --short HEAD).Trim()
-  $sources += "- Real-Fruit-Snacks/agent-toolkit @ $sha (MIT): $($own -join ', ')"
-  Write-Host "  this repo: $($own.Count) skills"
-}
 Set-Content caches\claude-skills\SOURCES.md (@('# Skill sources', '') + $sources) -Encoding utf8
 
 # ---- npm tarballs + seeded npm cache ----

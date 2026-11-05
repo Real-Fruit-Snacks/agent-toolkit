@@ -75,6 +75,11 @@
       "repo": "t3dotgg/tstack",
       "path": "skills",
       "license": "MIT"
+    },
+    {
+      "repo": "Real-Fruit-Snacks/killer-skills",
+      "path": "skills",
+      "license": "MIT"
     }
   ]
 }
