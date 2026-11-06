@@ -118,6 +118,7 @@ jobs:
           sudo test -d /tmp/chk/home/dev/.claude/skills/docx
           sudo test -f /tmp/chk/home/dev/.claude/skills/full-send/SKILL.md
           for s in killer-design killer-repo killer-council; do sudo test -f /tmp/chk/home/dev/.claude/skills/$s/SKILL.md; done
+          sudo test -f /tmp/chk/home/dev/.cache/killer-skills-fonts/fonts.json
           sudo ls /tmp/chk/home/dev/.local/share/claude/versions/
           # what the provisioner registered, read from the image's own config
           sudo python3 - <<'PY'
@@ -228,6 +229,21 @@ jobs:
           foreach ($s in 'killer-design', 'killer-repo', 'killer-council') { if (-not (Test-Path (Join-Path $env:USERPROFILE ".claude\skills\$s\SKILL.md"))) { throw "$s skill not installed" } }
           if (-not (Test-Path (Join-Path $env:USERPROFILE 'agent-toolkit-docs\mcp-servers.md'))) { throw 'MCP catalog not written' }
 
+          # killer-design, offline: a page set in a face from the font pack, screenshotted from the runtime
+          foreach ($d in 'killer-skills\runtime.json', 'killer-skills-fonts\fonts.json') { if (-not (Test-Path (Join-Path $env:USERPROFILE ".cache\$d"))) { throw "killer-skills pack not installed: $d" } }
+          $kd = Join-Path $env:USERPROFILE '.claude\skills\killer-design\scripts'
+          $site = Join-Path $env:TEMP 'ks-site'; New-Item -ItemType Directory -Force -Path $site | Out-Null
+          node (Join-Path $kd 'fonts.mjs') add $site 'IBM Plex Sans'
+          if ($LASTEXITCODE) { throw 'fonts.mjs could not add a face from the font pack' }
+          Set-Content (Join-Path $site 'index.html') '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Toolkit check</title><link rel="stylesheet" href="assets/fonts/fonts.css"><style>body{margin:2rem;font:1.25rem/1.5 "IBM Plex Sans",sans-serif}</style></head><body><main><h1>Offline</h1><p>Set in IBM Plex Sans from the font pack.</p></main></body></html>'
+          $dead = 'http://127.0.0.1:9'
+          $env:npm_config_offline = 'true'; $env:PLAYWRIGHT_DOWNLOAD_HOST = $dead; $env:HTTPS_PROXY = $dead; $env:HTTP_PROXY = $dead
+          $env:NODE_USE_ENV_PROXY = '1'; $env:NO_PROXY = '127.0.0.1,localhost'
+          $shot = node (Join-Path $kd 'shoot.mjs') $site --widths 390 --slices 1 --no-full --out (Join-Path $env:TEMP 'ks-shot') 2>&1 | Out-String
+          $code = $LASTEXITCODE
+          Write-Host $shot
+          if ($code -or $shot -match 'installing it once|Downloading Chromium' -or $shot -notmatch 'IBM Plex Sans \(web font loaded') { throw 'killer-design could not screenshot offline from the runtime and the font pack' }
+
       - name: next version
         id: ver
         shell: pwsh
@@ -267,7 +283,7 @@ jobs:
             "",
             $pins,
             "",
-            "Also included: the public Claude Code skills set with a Python wheelhouse, the tstack skills and my killer-skills (killer-design, killer-repo, killer-council), a seeded npm cache, Claude Code and T3 Code docs as markdown, Linux copies of the browser and tool caches, and a provisioned Ubuntu distro for WSL.",
+            "Also included: the public Claude Code skills set with a Python wheelhouse, the tstack skills and my killer-skills (killer-design, killer-repo, killer-council) with their runtime and font pack, a seeded npm cache, Claude Code and T3 Code docs as markdown, Linux copies of the browser and tool caches, and a provisioned Ubuntu distro for WSL.",
             "",
             "Every file and its SHA256 is in VERSIONS.md and SHA256SUMS.txt. Built by the weekly-release workflow."
           ) | Set-Content release-notes.md

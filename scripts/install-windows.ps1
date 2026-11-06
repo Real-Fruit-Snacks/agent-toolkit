@@ -93,6 +93,38 @@ if (-not $SkipCaches) {
     Get-ChildItem (Join-Path $caches 'claude-skills') -Directory | ForEach-Object { Copy-Item $_.FullName (Join-Path $skills $_.Name) -Recurse -Force }
   }
 
+  Write-Host '== killer-skills packs (the runtime and font pack killer-design and killer-repo use)'
+  # The same folders, and the same installed-sha256.txt markers, that killer-skills' own
+  # installer writes, so either one sees the other's packs as up to date.
+  $ks = Join-Path $caches 'killer-skills'
+  if (Test-Path (Join-Path $ks 'SHA256SUMS.txt')) {
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    $ksSums = @{}
+    foreach ($l in Get-Content (Join-Path $ks 'SHA256SUMS.txt')) { if ($l -match '^([0-9a-f]{64})  (.+)$') { $ksSums[$Matches[2]] = $Matches[1] } }
+    foreach ($pack in @(@('killer-skills-runtime-windows-x64.zip', 'killer-skills'), @('killer-skills-fonts.zip', 'killer-skills-fonts'))) {
+      $zip = Join-Path $ks $pack[0]
+      if (-not (Test-Path $zip)) { Write-Warning "caches\killer-skills has no $($pack[0])"; continue }
+      $hash = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLower()
+      if ($hash -ne $ksSums[$pack[0]]) { throw "$($pack[0]) doesn't match caches\killer-skills\SHA256SUMS.txt" }
+      $target = Join-Path $home_ ".cache\$($pack[1])"
+      $marker = Join-Path $target 'installed-sha256.txt'
+      if ((Test-Path $marker) -and ((Get-Content $marker -Raw).Trim() -eq $hash)) { Write-Host "  $($pack[1]) is up to date"; continue }
+      New-Item -ItemType Directory -Force -Path (Split-Path $target) | Out-Null
+      $stage = "$target.new-$PID"
+      Remove-Item $stage -Recurse -Force -ErrorAction SilentlyContinue
+      [IO.Compression.ZipFile]::ExtractToDirectory($zip, $stage)
+      Set-Content (Join-Path $stage 'installed-sha256.txt') $hash -Encoding ascii
+      if (Test-Path $target) {
+        $old = "$target.old-$PID"
+        try { [IO.Directory]::Move($target, $old) }
+        catch { Remove-Item $stage -Recurse -Force -ErrorAction SilentlyContinue; Write-Warning "$target is in use (a Claude Code session running a skill?); close it and run this again"; continue }
+        [IO.Directory]::Move($stage, $target)
+        Remove-Item $old -Recurse -Force -ErrorAction SilentlyContinue
+      } else { [IO.Directory]::Move($stage, $target) }
+      Write-Host "  installed $($pack[1])"
+    }
+  }
+
   Write-Host '== Installing Python packages for the document skills'
   $wheels = Join-Path $caches 'pip-wheelhouse\win'
   if (Test-Path $wheels) {

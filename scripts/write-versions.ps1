@@ -59,6 +59,8 @@ foreach ($d in Get-ChildItem caches\playwright-browsers -Directory -ErrorAction 
 $lines += ''; $lines += '## Also in the release'; $lines += ''
 $lines += '- caches/npm-cache: seeded npm cache for offline installs of playwright, agent-device, expo-device-hub and the skill packages'
 $lines += '- caches/claude-skills: the public anthropics/skills set (Apache-2.0), t3dotgg/tstack (MIT) and Real-Fruit-Snacks/killer-skills (MIT)'
+$ksVer = Get-Content (Join-Path $root 'caches\killer-skills\VERSION') -Raw -ErrorAction SilentlyContinue
+if ($ksVer) { $lines += "- caches/killer-skills: killer-skills $($ksVer.Trim())'s runtime (Playwright, Chromium and Mermaid, for Windows) and font pack, for killer-design and killer-repo" }
 $lines += '- caches/claude-code-docs: Claude Code documentation, markdown, from code.claude.com/docs/llms.txt'
 $lines += '- caches/pip-wheelhouse: Python wheels for the document skills and the Python MCP servers (win + linux)'
 $lines += '- MCP servers (config/mcp-servers.json): npm ones in the npm cache, Python ones in the wheelhouse, github-mcp-server binaries in caches/mcp-bin'

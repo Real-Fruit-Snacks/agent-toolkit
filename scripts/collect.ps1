@@ -4,7 +4,8 @@
   nightly (or a pinned tag), Node, Git, gh, PowerShell 7, Python, WSL, the Ubuntu
   rootfs, Claude Code for Windows and Linux, the T3 tool caches at the versions
   the T3 build pins, Playwright browsers, a seeded npm cache, the public Claude
-  Code skills, offline docs and the Python wheelhouse. Writes VERSIONS.md.
+  Code skills with killer-skills' runtime and font pack, offline docs and the
+  Python wheelhouse. Writes VERSIONS.md.
 
   Runs the same on a workstation or a GitHub Actions windows runner: nothing is
   taken from the local ~/.t3 cache except, when present, the manifest snapshots.
@@ -150,7 +151,13 @@ New-Item -ItemType Directory -Force -Path caches\claude-skills | Out-Null
 $sources = @()
 foreach ($src in (Get-Content (Join-Path $root 'config\plugin-sources.json') -Raw | ConvertFrom-Json).skills) {
   $sk = Join-Path $env:TEMP ('skills-' + ($src.repo -replace '/', '-')); Remove-Item $sk -Recurse -Force -ErrorAction SilentlyContinue
-  git clone -q --depth 1 "https://github.com/$($src.repo).git" $sk
+  $branch = @()
+  if ($src.ref -eq 'latest-release') {
+    $rel = gh release view -R $src.repo --json tagName -q .tagName
+    if ($LASTEXITCODE -ne 0 -or -not $rel) { throw "no release found for $($src.repo)" }
+    $branch = @('--branch', $rel)
+  }
+  git -c advice.detachedHead=false clone -q --depth 1 @branch "https://github.com/$($src.repo).git" $sk
   if ($LASTEXITCODE -ne 0) { throw "clone failed: $($src.repo)" }
   $sha = (git -C $sk rev-parse --short HEAD).Trim()
   $names = @()
@@ -160,10 +167,33 @@ foreach ($src in (Get-Content (Join-Path $root 'config\plugin-sources.json') -Ra
     $names += $d.Name
   }
   Get-ChildItem $sk -Filter 'LICENSE*' -File | ForEach-Object { Copy-Item $_.FullName (Join-Path 'caches\claude-skills' ("$($_.BaseName)-$($src.repo -replace '/', '-')$($_.Extension)")) -Force }
-  $sources += "- $($src.repo) @ $sha ($($src.license)): $($names -join ', ')"
+  $at = if ($branch) { "$($branch[1]) ($sha)" } else { $sha }
+  $sources += "- $($src.repo) @ $at ($($src.license)): $($names -join ', ')"
   Write-Host "  $($src.repo): $($names.Count) skills"
 }
 Set-Content caches\claude-skills\SOURCES.md (@('# Skill sources', '') + $sources) -Encoding utf8
+
+# ---- killer-skills packs ----
+# killer-design and killer-repo use a runtime (Playwright, its Chromium and Mermaid) and a
+# font pack, from the same killer-skills release as the skills above, so they need no
+# network. Checked against that release's SHA256SUMS.txt. Its Node.js and Python packs
+# aren't needed: this kit installs both.
+Write-Host '== killer-skills packs'
+$ksDir = Join-Path $root 'caches\killer-skills'
+Remove-Item $ksDir -Recurse -Force -ErrorAction SilentlyContinue
+New-Item -ItemType Directory -Force -Path $ksDir | Out-Null
+$ksTag = gh release view -R Real-Fruit-Snacks/killer-skills --json tagName -q .tagName
+$ksFiles = @('killer-skills-runtime-windows-x64.zip', 'killer-skills-fonts.zip', 'killer-skills-fonts.tar.gz')
+gh release download $ksTag -R Real-Fruit-Snacks/killer-skills -D $ksDir -p 'SHA256SUMS.txt' @($ksFiles | ForEach-Object { '-p', $_ }) --clobber
+if ($LASTEXITCODE -ne 0) { throw "download failed: killer-skills $ksTag packs" }
+$ksSums = @{}
+foreach ($l in Get-Content (Join-Path $ksDir 'SHA256SUMS.txt')) { if ($l -match '^([0-9a-f]{64})  (.+)$') { $ksSums[$Matches[2]] = $Matches[1] } }
+foreach ($f in $ksFiles) {
+  $got = (Get-FileHash (Join-Path $ksDir $f) -Algorithm SHA256).Hash.ToLower()
+  if ($got -ne $ksSums[$f]) { throw "killer-skills $ksTag $f doesn't match its SHA256SUMS.txt" }
+}
+Set-Content (Join-Path $ksDir 'VERSION') $ksTag -NoNewline
+Write-Host "  killer-skills ${ksTag}: the runtime and the font pack"
 
 # ---- npm tarballs + seeded npm cache ----
 Write-Host '== npm tarballs'

@@ -123,6 +123,22 @@ if [ -d "$CACHES/claude-skills" ]; then
   chown -R "$DEV_USER:$DEV_USER" "$HOME_DIR/.claude"
 fi
 
+log "killer-skills font pack (web fonts killer-design self-hosts)"
+# Same folder and installed-sha256.txt marker as killer-skills' own install.sh. Its runtime is Windows only.
+FONTS_TGZ="$CACHES/killer-skills/killer-skills-fonts.tar.gz"
+if [ -f "$FONTS_TGZ" ]; then
+  want=$(awk '$2 == "killer-skills-fonts.tar.gz" { print $1 }' "$CACHES/killer-skills/SHA256SUMS.txt")
+  if [ -n "$want" ] && [ "$(sha256sum "$FONTS_TGZ" | cut -d' ' -f1)" = "$want" ]; then
+    FONTS_DIR="$HOME_DIR/.cache/killer-skills-fonts"
+    install -d -o "$DEV_USER" -g "$DEV_USER" "$HOME_DIR/.cache"
+    rm -rf "$FONTS_DIR" && mkdir -p "$FONTS_DIR"
+    tar -xzf "$FONTS_TGZ" -C "$FONTS_DIR" && printf '%s\n' "$want" > "$FONTS_DIR/installed-sha256.txt"
+    chown -R "$DEV_USER:$DEV_USER" "$FONTS_DIR"
+  else
+    echo "warn: killer-skills-fonts.tar.gz doesn't match caches/killer-skills/SHA256SUMS.txt; skipped"
+  fi
+fi
+
 log "Python packages for the document skills"
 if [ -d "$CACHES/pip-wheelhouse/linux" ] && [ "$ONLINE" = 1 ]; then
   apt-get install -y -qq python3-pip python3-venv >/dev/null 2>&1 || true
