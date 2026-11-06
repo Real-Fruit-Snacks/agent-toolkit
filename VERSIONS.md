@@ -1,15 +1,15 @@
 # Pinned versions
 
-Generated 2026-11-05 by scripts/write-versions.ps1.
+Generated 2026-11-06 by scripts/write-versions.ps1.
 
 | Component | Version | File | MB | SHA256 |
 |---|---|---|---|---|
-| T3 Code (Windows installer) | 0.1.8-nightly.20261105.4205 | `T3-Code-0.1.8-nightly.20261105.4205-x64.exe` | 278 | `0b01c19dca2f2181e2dd6c1697679d1c1aae83216c13f4565adca90d4a0d9897` |
-| T3 Code (Windows portable) | 0.1.8-nightly.20261105.4205 | `T3-Code-0.1.8-nightly.20261105.4205-x64.zip` | 187 | `c1596d067a61c6de32c9917f40f53215d7afa79dcef8321d73b89f0a9a327c3d` |
-| T3 server/CLI (win32) | 0.1.8-nightly.20261105.4205 | `t3-0.1.8-nightly.20261105.4205-win32-x64.zip` | 108 | `dc238d3cc5cd4add19c4dd336623c6bbdaf381fad3781c06042fa747f9bc59df` |
-| T3 Code (deb) | 0.1.8-nightly.20261105.4205 | `T3-Code-0.1.8-nightly.20261105.4205-amd64.deb` | 153 | `8a749230371d20c41445ab1b3ca2a4ddb002f9acee33a65bea56837444889cb2` |
-| T3 Code (AppImage) | 0.1.8-nightly.20261105.4205 | `T3-Code-0.1.8-nightly.20261105.4205-x86_64.AppImage` | 183 | `fbc5ebb0bae496d3b0e7e130043544019d46ba672214f233f40fc65c2fba247d` |
-| T3 server/CLI (linux) | 0.1.8-nightly.20261105.4205 | `t3-0.1.8-nightly.20261105.4205-linux-x64.tar.gz` | 118 | `a75235405d988cee035bc12d0984bf4a5de240025d1f5e0347fb947b2efe9d27` |
+| T3 Code (Windows installer) | 0.1.8-nightly.20261106.4247 | `T3-Code-0.1.8-nightly.20261106.4247-x64.exe` | 309 | `77bc8f3a73cb7b8a181d19777bf7fd0ad850278b166ae2bec0a3df8dfced8c24` |
+| T3 Code (Windows portable) | 0.1.8-nightly.20261106.4247 | `T3-Code-0.1.8-nightly.20261106.4247-x64.zip` | 189 | `d00e146fca29678670b33d2debecb5d1f44f00771244418b6c8f17884652f17d` |
+| T3 server/CLI (win32) | 0.1.8-nightly.20261106.4247 | `t3-0.1.8-nightly.20261106.4247-win32-x64.zip` | 128 | `3bcd2539edc00fc5d2fe8a2b01d8e39839dea22395c774e4accb981bf7755e8c` |
+| T3 Code (deb) | 0.1.8-nightly.20261106.4247 | `T3-Code-0.1.8-nightly.20261106.4247-amd64.deb` | 165 | `d93803501f146603529f71a190b6135cd42ebdbfbcaf57f7a8d7fbc60bf2faf9` |
+| T3 Code (AppImage) | 0.1.8-nightly.20261106.4247 | `T3-Code-0.1.8-nightly.20261106.4247-x86_64.AppImage` | 202 | `d64eb31f4eccd67c6453b2c70238e99b2c962c8e1ade5a347053fc3e35092b31` |
+| T3 server/CLI (linux) | 0.1.8-nightly.20261106.4247 | `t3-0.1.8-nightly.20261106.4247-linux-x64.tar.gz` | 141 | `d547c7fd0e349725b611769b61d78babe9890af9412ee6f1710bb9e93ebf8fa5` |
 | Claude Code (Windows) | 2.1.318 | `claude-2.1.318-win32-x64.exe` | 327 | `b9aa5b08dc2cc46ea77d334dce792d1b8fdbb3a43bb290efdebdc905b1181082` |
 | Claude Code (Linux glibc) | 2.1.318 | `claude-2.1.318-linux-x64` | 322 | `708c77b204db30086ff6f1ed34577bda03e1be74ced80557cbf7b54249ebf0bd` |
 | Claude Code (Linux musl) | 2.1.318 | `claude-2.1.318-linux-x64-musl` | 309 | `e6ff03823153a699d708c88c2fa87d18a1f6b45f13b14a985a221f8af442dd54` |
@@ -22,7 +22,7 @@ Generated 2026-11-05 by scripts/write-versions.ps1.
 | GitHub CLI (deb) | 2.103.3 | `gh_2.103.3_linux_amd64.deb` | 14 | `e3bafef96328d1a67de3a968bdfe1cc2ffd58cf6aba8b5e201356897ed06bb3d` |
 | WSL platform | 3.0.3.0 | `wsl.3.0.3.0.x64.msi` | 351 | `ae977286974255bd26bf925f00f40f5692c6b2084155cbc0563c09aea091f211` |
 | Ubuntu WSL rootfs | noble | `ubuntu-noble-wsl-amd64-wsl.rootfs.tar.gz` | 340 | `8251e27ffff381a4af5f41dcb94d867de3e0d9774a9241908ab34555d99315ea` |
-| Baked distro export | ubuntu-dev | `ubuntu-dev.tar.gz` | 4041 | `6fd603b5bfe35f4496b05310ed004fbcb88d1ead0245c75ac01f5b32ae19614e` |
+| Baked distro export | ubuntu-dev | `ubuntu-dev.tar.gz` | 4029 | `384555596bdf743f9114707f62a7fd9d17b46b979f76457d16b14c99a16667c1` |
 | github-mcp-server (win) | github-mcp-server | `github-mcp-server_Windows_x86_64.zip` | 9 | `ddce274916ebf31346dee71a0ed3345e80cd36b060a0bfb8160db0afc411e9d3` |
 | mcp-grafana (win) | mcp-grafana | `mcp-grafana_Windows_x86_64.zip` | 18 | `231695fef9031a2aed064ddab46b3288e7abd11822890a320cd21b547ffdc684` |
 | rust-analyzer (win) | rust-analyzer | `rust-analyzer-x86_64-pc-windows-msvc.zip` | 17 | `5450a3735c601f047dc9ca46a01add55c4ac7ef450ae5e710d249a26d65f5632` |
@@ -37,15 +37,16 @@ Generated 2026-11-05 by scripts/write-versions.ps1.
 ## Playwright browsers (caches/playwright-browsers)
 
 - .links
-- chromium_headless_shell-1248
-- chromium-1248
+- chromium_headless_shell-1254
+- chromium-1254
 - ffmpeg-1013
 - winldd-1007
 
 ## Also in the release
 
 - caches/npm-cache: seeded npm cache for offline installs of playwright, agent-device, expo-device-hub and the skill packages
-- caches/claude-skills: the public anthropics/skills set (Apache-2.0), t3dotgg/tstack (MIT) and killer-council from skills/ in this repo (MIT)
+- caches/claude-skills: the public anthropics/skills set (Apache-2.0), t3dotgg/tstack (MIT) and Real-Fruit-Snacks/killer-skills (MIT)
+- caches/killer-skills: killer-skills v1.2.0's runtime (Playwright, Chromium and Mermaid, for Windows) and font pack, for killer-design and killer-repo
 - caches/claude-code-docs: Claude Code documentation, markdown, from code.claude.com/docs/llms.txt
 - caches/pip-wheelhouse: Python wheels for the document skills and the Python MCP servers (win + linux)
 - MCP servers (config/mcp-servers.json): npm ones in the npm cache, Python ones in the wheelhouse, github-mcp-server binaries in caches/mcp-bin
@@ -56,10 +57,10 @@ Generated 2026-11-05 by scripts/write-versions.ps1.
 
 | Marketplace | Upstream | Commit | Plugins | Enabled by default |
 |---|---|---|---|---|
-| `atk-core-plugins` | anthropics/claude-plugins-official | `fa4eb54` | 49 | feature-dev, code-review, pr-review-toolkit, commit-commands, code-simplifier, claude-md-management, security-guidance, pyright-lsp, typescript-lsp, rust-analyzer-lsp |
+| `atk-core-plugins` | anthropics/claude-plugins-official | `1aa4a4b` | 50 | feature-dev, code-review, pr-review-toolkit, commit-commands, code-simplifier, claude-md-management, security-guidance, pyright-lsp, typescript-lsp, rust-analyzer-lsp |
 | `atk-knowledge-work` | anthropics/knowledge-work-plugins | `d900840` | 22 | engineering |
 | `superpowers-dev` | obra/superpowers | `22f0b46` | 1 | superpowers |
-| `claude-code-workflows` | wshobson/agents | `7e2fb55` | 92 | - |
+| `claude-code-workflows` | wshobson/agents | `4bde316` | 92 | - |
 | `voltagent-subagents` | VoltAgent/awesome-claude-code-subagents | `ed74d11` | 10 | - |
 | `trailofbits` | trailofbits/skills | `470419e` | 46 | - |
 | `atk-financial-services` | anthropics/financial-services | `6056506` | 19 | - |
@@ -75,6 +76,6 @@ Generated 2026-11-05 by scripts/write-versions.ps1.
 
 - agent-device-0.21.31.tgz
 - expo-device-hub-0.19.1.tgz
-- playwright-1.64.1.tgz
+- playwright-1.65.0.tgz
 - playwright-cli-0.1.23.tgz
-- playwright-test-1.64.1.tgz
+- playwright-test-1.65.0.tgz
