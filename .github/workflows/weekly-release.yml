@@ -329,9 +329,10 @@ jobs:
           git add docs/index.html docs/release.json docs/assets/plan-dark.svg docs/assets/plan-light.svg
           if (-not (git diff --cached --quiet)) {
             git commit -m "Page: point at $tag"
-            # main can move during a long run; replay the commit on top before pushing
+            # main can move during a long run; replay the commit on top before pushing. --autostash
+            # sets aside files the downloaded layout left changed in the checkout, which aren't pushed.
             git fetch origin main
-            git rebase FETCH_HEAD
+            git rebase --autostash FETCH_HEAD
             if ($LASTEXITCODE) { throw "page commit no longer applies on top of main" }
             git push origin HEAD:main
           }
