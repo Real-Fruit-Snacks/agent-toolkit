@@ -381,3 +381,4 @@ Write-Host "Offline docs: $home_\agent-toolkit-docs"
 Write-Host 'Nothing points back at the downloaded release any more; delete it to free the space.'
 Write-Host 'To check the install from a new terminal: .\scripts\check-install.ps1'
 if ($problems.Count) { exit 1 }
+exit 0   # explicit, so a native command's last exit code can't stand in for the result

@@ -193,14 +193,16 @@ jobs:
         run: |
           # The kit is for people who can't be administrators, so the smoke test runs as one: a new
           # local account in Users only runs the whole install, apps included, then check-install.ps1,
-          # through a scheduled task in Windows PowerShell 5.1. The logs are what it printed, and the
-          # page and README show them once the release is published.
+          # in Windows PowerShell 5.1. The logs are what it printed; the page and README show them
+          # once the release is published.
           $user = 'atk-user'
           $pw = 'Atk-' + [guid]::NewGuid().ToString('N') + '!9'
           Write-Host "::add-mask::$pw"
           New-LocalUser -Name $user -Password (ConvertTo-SecureString $pw -AsPlainText -Force) -PasswordNeverExpires -UserMayNotChangePassword -Description 'agent-toolkit smoke test' | Out-Null
           Add-LocalGroupMember -SID 'S-1-5-32-545' -Member $user
           if (Get-LocalGroupMember -SID 'S-1-5-32-544' | Where-Object { $_.Name -like "*\$user" }) { throw "$user is an administrator" }
+          $cred = New-Object System.Management.Automation.PSCredential($user, (ConvertTo-SecureString $pw -AsPlainText -Force))
+          $sid = (New-Object Security.Principal.NTAccount $user).Translate([Security.Principal.SecurityIdentifier]).Value
 
           # read access to the checkout and its restored layout; a folder of its own for the logs
           $ws = $env:GITHUB_WORKSPACE
@@ -211,40 +213,113 @@ jobs:
             if ($LASTEXITCODE) { throw "icacls $($g[0]) failed: $LASTEXITCODE" }
           }
 
-          # cmd's own redirection, so the logs hold exactly what a console would show, native output included
-          $ps = "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe"
-          @(
-            '@echo off',
-            "cd /d `"$ws`"",
-            "`"$ps`" -NoProfile -ExecutionPolicy Bypass -File scripts\install-windows.ps1 > $run\install.log 2>&1",
-            "> $run\install.exit echo %ERRORLEVEL%",
-            # -MaxProfileMB: what a roaming profile would copy at every logon stays small (VDI)
-            "`"$ps`" -NoProfile -ExecutionPolicy Bypass -File scripts\check-install.ps1 -StandardUser -MaxProfileMB 1024 -Offline > $run\check.log 2>&1",
-            "> $run\check.exit echo %ERRORLEVEL%"
-          ) | Set-Content "$run\run.cmd" -Encoding ascii
-
-          $task = 'atk-install'
-          $action = New-ScheduledTaskAction -Execute 'cmd.exe' -Argument "/d /c $run\run.cmd" -WorkingDirectory $ws
-          $settings = New-ScheduledTaskSettingsSet -ExecutionTimeLimit (New-TimeSpan -Minutes 70) -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
-          Register-ScheduledTask -TaskName $task -Action $action -Settings $settings -User $user -Password $pw -RunLevel Limited | Out-Null
-          Start-ScheduledTask -TaskName $task
-          $deadline = (Get-Date).AddMinutes(75)
-          while (-not (Test-Path "$run\check.exit") -and (Get-Date) -lt $deadline) {
-            Start-Sleep 15
-            $info = Get-ScheduledTaskInfo -TaskName $task
-            # 0x41301: still running; 0x41303: not run yet. Anything else, with the task idle, means it ended.
-            if ((Get-ScheduledTask -TaskName $task).State -eq 'Ready' -and $info.LastTaskResult -notin 0x41301, 0x41303 -and -not (Test-Path "$run\check.exit")) { Start-Sleep 5; break }
+          # A plain user on Windows Server can't sign in as a batch job (a scheduled task with a
+          # password) or interactively (Start-Process -Credential); grant this account both.
+          secedit /export /areas USER_RIGHTS /cfg "$run\rights.inf" | Out-Null
+          $inf = @(Get-Content "$run\rights.inf")
+          foreach ($right in 'SeBatchLogonRight', 'SeInteractiveLogonRight') {
+            if ($inf -match "^$right\s*=") { $inf = $inf -replace "^($right\s*=.*)$", "`$1,*$sid" }
+            else { $inf = $inf -replace '^\[Privilege Rights\]$', "[Privilege Rights]`r`n$right = *$sid" }
           }
-          $info = Get-ScheduledTaskInfo -TaskName $task
+          Set-Content "$run\rights.inf" $inf -Encoding Unicode
+          secedit /configure /db "$run\rights.sdb" /cfg "$run\rights.inf" /areas USER_RIGHTS /quiet | Out-Null
+          wevtutil set-log Microsoft-Windows-TaskScheduler/Operational /enabled:true
+
+          # The scripts run under as-user.ps1, which gives them the environment a fresh sign-in as this
+          # account has, whatever launched it: Start-Process -Credential hands down the launcher's.
+          # The profile comes from the token's SID, since known-folder lookups expand the inherited
+          # variables; the AppData folders from this account's own User Shell Folders.
+          @'
+          param([string]$What, [string]$Repo)
+          $ErrorActionPreference = 'Stop'
+          $sid = [Security.Principal.WindowsIdentity]::GetCurrent().User.Value
+          $env:USERPROFILE = [Environment]::ExpandEnvironmentVariables((Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList\$sid").ProfileImagePath)
+          $usf = Get-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders' -ErrorAction SilentlyContinue
+          function Folder($Name, $Default) { $v = if ($usf -and $usf.$Name) { $usf.$Name } else { $Default }; [Environment]::ExpandEnvironmentVariables($v) }
+          $env:APPDATA = Folder 'AppData' "$env:USERPROFILE\AppData\Roaming"
+          $env:LOCALAPPDATA = Folder 'Local AppData' "$env:USERPROFILE\AppData\Local"
+          $env:TEMP = Join-Path $env:LOCALAPPDATA 'Temp'; $env:TMP = $env:TEMP
+          $env:HOMEDRIVE = Split-Path -Qualifier $env:USERPROFILE; $env:HOMEPATH = Split-Path -NoQualifier $env:USERPROFILE
+          $env:USERNAME = [Environment]::UserName
+          . (Join-Path $Repo 'scripts\common.ps1')
+          Import-NewTerminalEnvironment
+          New-Item -ItemType Directory -Force -Path $env:TEMP | Out-Null
+          switch ($What) {
+            'probe'   { "user=$([Security.Principal.WindowsIdentity]::GetCurrent().Name) profile=$env:USERPROFILE localappdata=$env:LOCALAPPDATA elevated=$(Test-Elevated)"; exit 0 }
+            'install' { & (Join-Path $Repo 'scripts\install-windows.ps1'); exit $LASTEXITCODE }
+            'check'   { & (Join-Path $Repo 'scripts\check-install.ps1') -StandardUser -MaxProfileMB 1024 -Offline; exit $LASTEXITCODE }
+          }
+          '@ -replace '(?m)^          ', '' | Set-Content "$run\as-user.ps1" -Encoding ascii
+
+          # cmd's own redirection, so the logs hold exactly what a console would show, native output included.
+          # check-install.ps1 -MaxProfileMB: what a roaming profile would copy at every logon stays small (VDI).
+          $ps = "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe"
+          $as = "`"$ps`" -NoProfile -ExecutionPolicy Bypass -File $run\as-user.ps1"
+          @('@echo off', "cd /d `"$ws`"", "$as probe `"$ws`" > $run\probe.log 2>&1", "> $run\probe.exit echo %ERRORLEVEL%") | Set-Content "$run\probe.cmd" -Encoding ascii
+          @('@echo off', "cd /d `"$ws`"",
+            "$as install `"$ws`" > $run\install.log 2>&1", "> $run\install.exit echo %ERRORLEVEL%",
+            "$as check `"$ws`" > $run\check.log 2>&1", "> $run\check.exit echo %ERRORLEVEL%") | Set-Content "$run\run.cmd" -Encoding ascii
+
+          function Start-AsTask([string]$Cmd, [string]$Done, [int]$Minutes) {
+            $name = 'atk-' + [IO.Path]::GetFileNameWithoutExtension($Cmd)
+            $action = New-ScheduledTaskAction -Execute "$env:SystemRoot\System32\cmd.exe" -Argument "/d /c $Cmd" -WorkingDirectory $run
+            $settings = New-ScheduledTaskSettingsSet -ExecutionTimeLimit (New-TimeSpan -Minutes ($Minutes + 5)) -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
+            Register-ScheduledTask -TaskName $name -Action $action -Settings $settings -User $user -Password $pw -RunLevel Limited -Force | Out-Null
+            Start-ScheduledTask -TaskName $name
+            $deadline = (Get-Date).AddMinutes($Minutes); $startBy = (Get-Date).AddMinutes(3)
+            while (-not (Test-Path $Done) -and (Get-Date) -lt $deadline) {
+              Start-Sleep 10
+              $info = Get-ScheduledTaskInfo -TaskName $name
+              # 0x41303: not run yet; 0x41301: running. Not started after 3 minutes, or idle with any
+              # other result, means it isn't going to finish.
+              if ($info.LastTaskResult -eq 0x41303 -and (Get-Date) -gt $startBy) { Write-Host '  the task never started'; break }
+              if ((Get-ScheduledTask -TaskName $name).State -eq 'Ready' -and $info.LastTaskResult -notin 0x41301, 0x41303 -and -not (Test-Path $Done)) { Start-Sleep 5; break }
+            }
+            $info = Get-ScheduledTaskInfo -TaskName $name
+            Write-Host ("  task {0}: last result 0x{1:x}, last run {2}" -f $name, $info.LastTaskResult, $info.LastRunTime)
+            Unregister-ScheduledTask -TaskName $name -Confirm:$false
+            return (Test-Path $Done)
+          }
+          function Start-AsProcess([string]$Cmd, [string]$Done, [int]$Minutes) {
+            try {
+              $p = Start-Process -FilePath "$env:SystemRoot\System32\cmd.exe" -ArgumentList '/d', '/c', $Cmd -Credential $cred -LoadUserProfile -WorkingDirectory $run -PassThru
+              if (-not $p.WaitForExit($Minutes * 60000)) { Write-Host "  still running after $Minutes minutes"; try { $p.Kill() } catch {} }
+            } catch { Write-Host "  Start-Process -Credential failed: $($_.Exception.Message)" }
+            return (Test-Path $Done)
+          }
+          function Show-Why {
+            Write-Host '  -- Task Scheduler events'
+            Get-WinEvent -LogName 'Microsoft-Windows-TaskScheduler/Operational' -MaxEvents 20 -ErrorAction SilentlyContinue | ForEach-Object { "    $($_.TimeCreated.ToString('HH:mm:ss')) $($_.Id) $(($_.Message -replace '\s+', ' ').Substring(0, [math]::Min(220, ($_.Message -replace '\s+', ' ').Length)))" }
+            Write-Host '  -- failed sign-ins'
+            Get-WinEvent -FilterHashtable @{ LogName = 'Security'; Id = 4625 } -MaxEvents 5 -ErrorAction SilentlyContinue | ForEach-Object { "    $($_.TimeCreated.ToString('HH:mm:ss')) $((@($_.Message -split "`r?`n" | Where-Object { $_ -match 'Account Name|Logon Type|Failure Reason|Status' }) | ForEach-Object { $_.Trim() }) -join ' | ')" }
+            Write-Host '  -- sign-in rights now'
+            secedit /export /areas USER_RIGHTS /cfg "$run\now.inf" | Out-Null
+            Get-Content "$run\now.inf" | Where-Object { $_ -match 'SeBatchLogonRight|SeInteractiveLogonRight|SeDeny' } | ForEach-Object { "    $_" }
+          }
+
+          # A ten-second probe first, so a launch that can't work fails in minutes, with the reason.
+          $method = $null
+          Write-Host "== probe: a scheduled task as $user"
+          if (Start-AsTask "$run\probe.cmd" "$run\probe.exit" 4) { $method = 'task' }
+          else {
+            Show-Why
+            Write-Host "== probe: Start-Process -Credential as $user"
+            if (Start-AsProcess "$run\probe.cmd" "$run\probe.exit" 4) { $method = 'process' } else { Show-Why }
+          }
+          Get-Content "$run\probe.log" -ErrorAction SilentlyContinue
+          if (-not $method) { throw "neither a scheduled task nor Start-Process -Credential could run anything as $user" }
+          if (-not (Select-String -Path "$run\probe.log" -SimpleMatch "\$user " -Quiet) -or (Select-String -Path "$run\probe.log" -SimpleMatch 'elevated=True' -Quiet)) { throw "the probe didn't run as $user, unelevated" }
+
+          Write-Host "== install, as $user, through $(if ($method -eq 'task') { 'a scheduled task' } else { 'Start-Process -Credential' })"
+          if ($method -eq 'task') { [void](Start-AsTask "$run\run.cmd" "$run\check.exit" 80) } else { [void](Start-AsProcess "$run\run.cmd" "$run\check.exit" 80) }
           Write-Host "== install-windows.ps1, as $user"
           Get-Content "$run\install.log" -ErrorAction SilentlyContinue
           Write-Host "== check-install.ps1, as $user"
           Get-Content "$run\check.log" -ErrorAction SilentlyContinue
           Copy-Item "$run\install.log", "$run\check.log" $env:RUNNER_TEMP -ErrorAction SilentlyContinue
-          Unregister-ScheduledTask -TaskName $task -Confirm:$false
           $ie = "$(Get-Content "$run\install.exit" -ErrorAction SilentlyContinue)".Trim()
           $ce = "$(Get-Content "$run\check.exit" -ErrorAction SilentlyContinue)".Trim()
-          if (-not $ce) { throw ("the task as $user didn't finish; last result 0x{0:x}" -f $info.LastTaskResult) }
+          if (-not $ce) { Show-Why; throw "the install as $user didn't finish" }
           if ($ie -ne '0') { throw "install-windows.ps1 exited $ie as $user" }
           if ($ce -ne '0') { throw "check-install.ps1 exited $ce as $user" }
 

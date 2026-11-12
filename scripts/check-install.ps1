@@ -253,3 +253,4 @@ if ($failed.Count) {
   exit 1
 }
 Write-Host "Every check passed, for $me."
+exit 0
