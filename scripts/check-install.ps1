@@ -133,15 +133,18 @@ if (-not $SkipApps) {
     if ($t.dir -and $first -and $first.Source -ne $t.exe) { Note $t.id "a new terminal runs $($first.Source) first; it was installed for all users" }
   }
 
-  $npm = Join-Path $Root 'node\npm.cmd'
-  if (Test-Path $npm) {
-    $prefix = "$(@(Invoke-Native { & $npm prefix -g }) | Select-Object -Last 1)".Trim()
+  $npmrc = Join-Path $Root 'node\node_modules\npm\npmrc'
+  if (Test-Path $npmrc) {
+    # What the install set up: Node's own npmrc points global packages at the root, which is on PATH.
     $want = Join-Path $Root 'npm'
-    # npm prints a UUID-shaped part of a path as *** (it takes it for an old access token), so compare with those masked
-    $uuid = '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}'
-    if (($prefix.TrimEnd('\') -replace $uuid, '***') -ne ($want -replace $uuid, '***')) { Fail 'npm prefix' "global packages go to $prefix, not $want" }
+    $set = "$(Get-Content $npmrc | Where-Object { $_ -match '^prefix=' } | Select-Object -First 1)" -replace '^prefix=', ''
+    if ($set.TrimEnd('\') -ne $want) { Fail 'npm prefix' "Node's npmrc sends global packages to '$set', not $want" }
     elseif ($userPath -notcontains $want) { Fail 'npm prefix' "$want is not on the user PATH" }
-    else { Ok 'npm prefix' $prefix }
+    else { Ok 'npm prefix' $want }
+    # A prefix variable set for the machine or the user wins over the npmrc for npm install -g in a terminal.
+    if ($env:npm_config_prefix -and $env:npm_config_prefix.TrimEnd('\') -ne $want) {
+      Note 'npm prefix' "npm_config_prefix is set to $($env:npm_config_prefix) here, so npm install -g in a terminal goes there; the kit's own packages are in $want"
+    }
   }
 
   $t3 = Get-ChildItem (Join-Path $env:LOCALAPPDATA 'Programs\t3code') -Filter '*.exe' -File -ErrorAction SilentlyContinue | Where-Object { $_.Name -notlike 'Uninstall*' } | Select-Object -First 1

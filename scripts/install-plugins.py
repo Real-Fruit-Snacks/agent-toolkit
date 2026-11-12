@@ -99,11 +99,14 @@ def install_lsp():
         c = os.path.join(os.environ.get('ProgramFiles', r'C:\Program Files'), 'nodejs', 'npm.cmd')
         npm = c if os.path.exists(c) else None
     cache = os.environ.get('npm_config_cache') or os.path.join(HOME, '.npm-toolkit-cache')
+    # With the kit's own Node, global packages go to the install root's npm folder, even where a
+    # machine-wide npm prefix variable points elsewhere.
+    env = dict(os.environ, npm_config_prefix=os.path.join(root, 'npm')) if npm and npm == own else None
     if args.skip_lsp_npm:
         print('  lsp npm     skipped (--skip-lsp-npm)')
     elif npm and cfg.get('npm') and os.path.isdir(cache):
         for pkg in cfg['npm']:  # one at a time, matching how the cache was seeded
-            p = subprocess.run([npm, 'install', '-g', '--offline', '--cache', cache, '--no-audit', '--no-fund', pkg], capture_output=True, text=True)
+            p = subprocess.run([npm, 'install', '-g', '--offline', '--cache', cache, '--no-audit', '--no-fund', pkg], capture_output=True, text=True, env=env)
             print(f"  lsp npm     {pkg}: {'ok' if p.returncode == 0 else 'FAILED: ' + (p.stderr or '')[-300:]}")
     else:
         print('  lsp npm     skipped (npm or the seeded npm cache is missing)')

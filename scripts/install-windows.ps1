@@ -51,6 +51,9 @@ $config   = Join-Path $repo 'config'
 $home_    = $env:USERPROFILE
 $Root     = [IO.Path]::GetFullPath($Root).TrimEnd('\')
 $env:AGENT_TOOLKIT_HOME = $Root   # common.ps1, install-mcp.ps1 and install-plugins.py read it
+# Global npm packages go to the root's npm folder. Node's npmrc says so too, but a prefix variable
+# set for the whole machine (the GitHub runners set one, and so may IT) would win over it.
+$env:npm_config_prefix = Join-Path $Root 'npm'
 $nodeDir  = Join-Path $Root 'node'
 $npmDir   = Join-Path $Root 'npm'
 $gitDir   = Join-Path $Root 'git'
@@ -212,9 +215,10 @@ if (-not $SkipApps) {
 }
 
 if (-not $SkipCaches) {
-  # bin also holds the MCP and language-server binaries, which Claude Code finds on PATH
-  New-Item -ItemType Directory -Force -Path $binDir | Out-Null
+  # bin and npm hold the MCP and language-server binaries, which Claude Code finds on PATH
+  New-Item -ItemType Directory -Force -Path $binDir, $npmDir | Out-Null
   Add-UserPath $binDir
+  Add-UserPath $npmDir
   # this run's own tools look in the root's caches, whatever the user environment says yet
   $env:npm_config_cache = $npmCache
   $env:PLAYWRIGHT_BROWSERS_PATH = $pwCache

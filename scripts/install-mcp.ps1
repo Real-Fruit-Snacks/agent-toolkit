@@ -27,6 +27,8 @@ function Expand-Vars($s) { "$s" -replace '\$\{HOME\}', ($home_ -replace '\\', '/
 
 # ---- npm ----
 $npm = Find-Npm
+# the root's own npm folder, even where a machine-wide prefix variable says otherwise
+$env:npm_config_prefix = Join-Path $tk 'npm'
 $npmCache = Join-Path $tk 'cache\npm'
 $npmPkgs = $servers | Where-Object kind -eq 'npm' | Where-Object { -not $_.platforms -or (@($_.platforms) -contains 'win') } | ForEach-Object package
 $installed = @{}
