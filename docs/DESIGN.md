@@ -6,7 +6,7 @@ Every Sunday the weekly-release workflow packs one consignment: about 10 GiB in 
 
 ## Audience and primary action
 
-Me, setting up another machine, and anyone curious how a whole agentic coding setup fits in one GitHub release. They need the install flow, what the latest release pins, and enough proof (digests, the smoke test) to trust it. Primary action: get the latest release.
+Mostly people who want T3 Code and Claude Code on a Windows machine they aren't an administrator of: a work laptop, a lab or school machine, and above all a VDI desktop (Citrix, Horizon, Azure Virtual Desktop, Windows 365), where only the profile persists, disks are small and several people may share the host. Then me, setting up another machine, and anyone curious how a whole agentic coding setup fits in one GitHub release. The first question they bring is whether it will work without admin rights, so the page answers it in the headline, the install steps say "not as administrator" out loud, and a section lists every place the install writes. Then they need the install flow, what the latest release pins, and enough proof to trust it: a standard user's own install log, and the digests. Primary action: get the latest release.
 
 ## Type
 
@@ -35,7 +35,7 @@ Every colour that means a state carries a word next to it: "over GitHub's 2 GiB 
 
 ## Layout
 
-A 1200px wrap. The hero is the load plan: the headline and install link sit in the plan's headroom, above the 2 GiB line, and the 41 columns stand along the bottom of the first screen, grouped by the folder each one unpacks to. Below it each section takes its own form: a two-column install flow with the real log beside it, the pin table with the quantities set large, a single statement for why, an itinerary for the build, and a plain list of what was tested and what is known to be wrong.
+A 1200px wrap. The hero is the load plan: the headline and install link sit in the plan's headroom, above the 2 GiB line, and the 41 columns stand along the bottom of the first screen, grouped by the folder each one unpacks to. Below it each section takes its own form: a two-column install flow with the real log beside it, a table of where everything goes with a plain list for VDI desktops under it, the pin table with the quantities set large, a single statement for why, an itinerary for the build, and a plain list of what was tested and what is known to be wrong.
 
 ## Signature
 
@@ -51,7 +51,7 @@ On load the plan packs itself: the columns grow group by group, then the provisi
 
 ## The data
 
-`scripts/write-page.py --tag vX` reads the published release (names, sizes and GitHub's SHA-256 digests) and `VERSIONS.md`, writes `docs/release.json`, and rewrites the blocks between `<!-- gen:NAME -->` comments in `index.html`. The weekly-release workflow runs it after it publishes, so the page always shows the latest release. Everything outside those blocks is hand-written. The `<h2>Pinned in vX</h2>` heading is kept in this exact form because the workflow also rewrites it with a regex.
+`scripts/write-page.py --tag vX --log install.log --check check.log` reads the published release (names, sizes and GitHub's SHA-256 digests), `VERSIONS.md`, and what `install-windows.ps1` and `check-install.ps1` printed when the build ran them as a new account with no admin rights. It writes `docs/release.json`, rewrites the blocks between `<!-- gen:NAME -->` comments in `index.html`, and writes the same log into the README. The weekly-release workflow runs it after it publishes, so the page always shows the latest release and the log of the install that proved it. The log is trimmed only by cutting runs of `ok` lines to their first two and a count, and the caption names the build and the account. Everything outside those blocks is hand-written. The `<h2>Pinned in vX</h2>` heading is kept in this exact form because the workflow also rewrites it with a regex.
 
 ## README load plan
 

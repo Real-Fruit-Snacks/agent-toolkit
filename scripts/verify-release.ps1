@@ -36,6 +36,12 @@ foreach ($line in Get-Content $tmp) { if ($line -match '^([0-9a-f]{64})\s+\*?(.+
 $bad = 0
 foreach ($a in $assets) {
   if ($a.name -eq 'SHA256SUMS.txt') { continue }
+  # The project page is rendered from the published release, so it's uploaded after SHA256SUMS.txt
+  # is fixed and can't be in it. It still needs the digest GitHub records for every upload.
+  if ($a.name -like 'page--*.zip' -and -not $sums.ContainsKey($a.name)) {
+    if ($a.digest -match '^[0-9a-f]{64}$') { Write-Host "  page          $($a.name) (published after the sums; GitHub's digest $($a.digest.Substring(0, 12)))" } else { Write-Host "  NO DIGEST     $($a.name)"; $bad++ }
+    continue
+  }
   if (-not $sums.ContainsKey($a.name)) { Write-Host "  NOT IN SUMS   $($a.name)"; $bad++; continue }
   if ($a.digest -ne $sums[$a.name]) { Write-Host "  DIGEST DIFF   $($a.name)"; $bad++ } else { Write-Host "  ok            $($a.name)" }
 }
@@ -53,5 +59,6 @@ if ($Local) {
 }
 
 Write-Host ''
-if ($bad -eq 0) { Write-Host "Release $Tag is consistent: $($assets.Count) assets, digests match SHA256SUMS.txt." }
+$n = @($assets | Where-Object { $_.name -notlike 'page--*.zip' }).Count
+if ($bad -eq 0) { Write-Host "Release $Tag is consistent: $n assets, digests match SHA256SUMS.txt." }
 else { Write-Host "$bad problem(s). Re-upload the listed assets with --clobber, then re-run."; exit 1 }

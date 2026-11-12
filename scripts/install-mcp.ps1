@@ -2,10 +2,11 @@
 .SYNOPSIS
   Installs the bundled MCP servers on Windows from the offline caches and
   registers the default ones in Claude Code's user config. Called by
-  install-windows.ps1; safe to re-run.
-    npm servers  -> npm install -g --offline from caches\npm-cache
-    pip servers  -> ~\.venv-mcp from caches\pip-wheelhouse\win
-    bin servers  -> ~\.local\bin from caches\mcp-bin\win
+  install-windows.ps1; safe to re-run. Everything goes under the install root
+  (AGENT_TOOLKIT_HOME, %LOCALAPPDATA%\Programs\agent-toolkit by default):
+    npm servers  -> <root>\npm, npm install -g --offline from <root>\cache\npm
+    pip servers  -> <root>\venv-mcp\<id> from caches\pip-wheelhouse\win
+    bin servers  -> <root>\bin from caches\mcp-bin\win
   Default servers are added to ~\.claude.json (or CLAUDE_CONFIG_DIR\.claude.json)
   only if a server with that id is not already registered. Every server, default
   or not, is written to ~\agent-toolkit-docs\mcp-servers.md with a 'claude mcp add'
@@ -14,27 +15,28 @@
 [CmdletBinding()]
 param([switch]$RegisterAll)
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'common.ps1')
 $root   = Split-Path -Parent $PSScriptRoot
 $caches = Join-Path $root 'caches'
 $home_  = $env:USERPROFILE
+$tk     = Get-ToolkitRoot
 $manifest = Get-Content (Join-Path $root 'config\mcp-servers.json') -Raw | ConvertFrom-Json
 $servers = $manifest.servers
 
 function Expand-Vars($s) { "$s" -replace '\$\{HOME\}', ($home_ -replace '\\', '/') -replace '\$\{CWD\}', '.' }
 
 # ---- npm ----
-$npm = Get-Command npm.cmd -ErrorAction SilentlyContinue
-if (-not $npm) { $npm = Get-Command (Join-Path $env:ProgramFiles 'nodejs\npm.cmd') -ErrorAction SilentlyContinue }
-$npmCache = Join-Path $home_ '.npm-toolkit-cache'
+$npm = Find-Npm
+$npmCache = Join-Path $tk 'cache\npm'
 $npmPkgs = $servers | Where-Object kind -eq 'npm' | Where-Object { -not $_.platforms -or (@($_.platforms) -contains 'win') } | ForEach-Object package
 $installed = @{}
 if ($npm -and (Test-Path $npmCache)) {
   Write-Host "== npm MCP servers ($($npmPkgs.Count))"
   foreach ($pkg in $npmPkgs) {   # one at a time, so one package that can't resolve offline doesn't block the rest
-    $out = & $npm.Source install -g --offline --cache "$npmCache" --no-audit --no-fund $pkg 2>&1
+    $out = Invoke-Native { & $npm install -g --offline --cache "$npmCache" --no-audit --no-fund $pkg }
     if ($LASTEXITCODE -ne 0) { Write-Warning "  npm install failed for $pkg : $(@($out | Select-String -Pattern 'npm error' | Select-Object -First 2) -join ' ')" }
   }
-  $gRoot = (& $npm.Source root -g).Trim()
+  $gRoot = "$(@(Invoke-Native { & $npm root -g }) | Select-Object -Last 1)".Trim()
   foreach ($s in ($servers | Where-Object kind -eq 'npm')) {
     $pj = Join-Path (Join-Path $gRoot $s.package) 'package.json'
     if (-not (Test-Path $pj)) { Write-Warning "  missing: $($s.package)"; continue }
@@ -49,31 +51,28 @@ if ($npm -and (Test-Path $npmCache)) {
 # ---- pip ----
 $wheels = Join-Path $caches 'pip-wheelhouse\win'
 $reqMcp = Join-Path $caches 'pip-wheelhouse\requirements-mcp.txt'
-$venv = Join-Path $home_ '.venv-mcp'
-$py = Get-ChildItem "$env:LOCALAPPDATA\Programs\Python\Python3*\python.exe" -ErrorAction SilentlyContinue | Sort-Object FullName -Descending | Select-Object -First 1
-if (-not $py) {  # fall back to a python on PATH that actually runs (Windows ships a Store stub named python.exe)
-  foreach ($c in 'python.exe','python3.exe') { $g = Get-Command $c -ErrorAction SilentlyContinue; if ($g) { $v = & $g.Source --version 2>&1; if ($LASTEXITCODE -eq 0 -and "$v" -match '^Python 3') { $py = Get-Item $g.Source; break } } }
-}
+$venv = Join-Path $tk 'venv-mcp'
+$py = Find-Python   # the wheelhouse is built for Python 3.13: that one, not just the newest
 function OnThisPlatform($s) { -not $s.platforms -or (@($s.platforms) -contains 'win') }
 if ($py -and (Test-Path $wheels)) {
   # one venv per server: these tools pin conflicting versions of shared dependencies
-  Write-Host '== Python MCP servers -> ~\.venv-mcp\<id>'
+  Write-Host "== Python MCP servers -> $venv\<id>"
   New-Item -ItemType Directory -Force -Path $venv | Out-Null
   foreach ($s in ($servers | Where-Object kind -eq 'pip' | Where-Object { OnThisPlatform $_ })) {
     $sv = Join-Path $venv $s.id
     $exe = Join-Path $sv "Scripts\$($s.bin).exe"
     if (-not (Test-Path $exe)) {
-      if (-not (Test-Path (Join-Path $sv 'Scripts\python.exe'))) { & $py.FullName -m venv $sv }
-      & (Join-Path $sv 'Scripts\python.exe') -m pip install --quiet --disable-pip-version-check --no-index --find-links "$wheels" $s.package 2>$null
+      if (-not (Test-Path (Join-Path $sv 'Scripts\python.exe'))) { $null = Invoke-Native { & $py -m venv $sv } }
+      $null = Invoke-Native { & (Join-Path $sv 'Scripts\python.exe') -m pip install --quiet --disable-pip-version-check --no-index --find-links "$wheels" $s.package }
     }
     if (Test-Path $exe) { $installed[$s.id] = @{ command = $exe; args = @($s.args | ForEach-Object { Expand-Vars $_ }) }; Write-Host "  ok  $($s.id)" }
     else { Write-Warning "  missing: $($s.id) ($($s.package) has no wheel for this Python in the wheelhouse)"; Remove-Item $sv -Recurse -Force -ErrorAction SilentlyContinue }
   }
-} else { Write-Warning 'Python or the wheelhouse is missing; skipping pip MCP servers' }
+} else { Write-Warning 'Python 3.13 or the wheelhouse is missing; skipping pip MCP servers' }
 
 # ---- bin ----
 $binDir = Join-Path $caches 'mcp-bin\win'
-$localBin = Join-Path $home_ '.local\bin'
+$localBin = Join-Path $tk 'bin'
 New-Item -ItemType Directory -Force -Path $localBin | Out-Null
 foreach ($s in ($servers | Where-Object kind -eq 'bin' | Where-Object { OnThisPlatform $_ })) {
   $zip = Get-Item (Join-Path $binDir $s.asset_win) -ErrorAction SilentlyContinue
@@ -101,8 +100,7 @@ foreach ($s in $servers) {
   $cfg.mcpServers | Add-Member -NotePropertyName $s.id -NotePropertyValue ([pscustomobject]$entry)
   $added++
 }
-New-Item -ItemType Directory -Force -Path (Split-Path $cj) | Out-Null
-$cfg | ConvertTo-Json -Depth 10 | Set-Content $cj -Encoding utf8
+Write-Utf8 $cj ($cfg | ConvertTo-Json -Depth 10)
 Write-Host "== registered $added default MCP server(s) in $cj"
 
 # ---- catalog with add-commands for the rest ----
@@ -116,5 +114,5 @@ foreach ($s in $servers) {
   $lines += "## $($s.id)" + $(if ($s.default) { ' (registered by default)' } else { '' })
   $lines += ''; $lines += $s.note; $lines += ''; $lines += '```'; $lines += ($cmdLine -replace '\s+', ' '); $lines += '```'; $lines += ''
 }
-Set-Content (Join-Path $docs 'mcp-servers.md') ($lines -join "`n") -Encoding utf8
+Write-Utf8 (Join-Path $docs 'mcp-servers.md') (($lines -join "`n") + "`n")
 Write-Host "== catalog: $docs\mcp-servers.md"

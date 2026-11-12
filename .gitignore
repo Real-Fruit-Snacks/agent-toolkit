@@ -25,3 +25,5 @@ release/
 *.log
 !caches/pip-wheelhouse/requirements-mcp.txt
 __pycache__/
+assets/
+page/

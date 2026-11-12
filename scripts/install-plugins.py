@@ -1,18 +1,21 @@
 #!/usr/bin/env python3
 """Install the vendored Claude Code plugin marketplaces, offline.
 
-  * copies caches/claude-plugins/<marketplace>/ to ~/.claude-toolkit/marketplaces/
-    (plugins load in place from there, so it must be a stable location)
+  * copies caches/claude-plugins/<marketplace>/ to --marketplaces (default
+    ~/.claude-toolkit/marketplaces; plugins load in place from there, so it must be
+    a stable location)
   * registers each marketplace with `claude plugin marketplace add <dir>`
   * installs the plugins listed as enabled with `claude plugin install`
   * installs the language servers the LSP plugins call: npm ones from the
-    seeded npm cache, binaries from caches/lsp-bin into ~/.local/bin
+    seeded npm cache, binaries from caches/lsp-bin into --bin (default ~/.local/bin)
   * checks `claude plugin list --json` and fails if an enabled plugin has errors
 
 Works on Windows, WSL and Linux. Re-running is safe: existing marketplaces are
-refreshed in place and already-installed plugins are left alone.
+refreshed in place and already-installed plugins are left alone. install-windows.ps1
+passes the install root's plugins and bin folders.
 
-Usage: python install-plugins.py [--repo DIR] [--claude PATH] [--skip-lsp] [--skip-lsp-npm] [--all]
+Usage: python install-plugins.py [--repo DIR] [--claude PATH] [--marketplaces DIR] [--bin DIR]
+                                 [--skip-lsp] [--skip-lsp-npm] [--all]
 """
 import argparse, glob, gzip, json, os, shutil, subprocess, sys, zipfile
 
@@ -22,13 +25,15 @@ ap.add_argument('--claude', default=None, help='path to the claude binary')
 ap.add_argument('--skip-lsp', action='store_true', help='skip all language servers')
 ap.add_argument('--skip-lsp-npm', action='store_true', help='skip the npm language servers (installed separately, e.g. as root on Linux)')
 ap.add_argument('--all', action='store_true', help='install every vendored plugin, not just the defaults')
+ap.add_argument('--marketplaces', default=None, help='where the marketplaces are copied to and load from')
+ap.add_argument('--bin', default=None, help='where the language-server binaries go')
 args = ap.parse_args()
 
 WIN = os.name == 'nt'
 HOME = os.path.expanduser('~')
 SRC = os.path.join(args.repo, 'caches', 'claude-plugins')
-DEST = os.path.join(HOME, '.claude-toolkit', 'marketplaces')
-LOCAL_BIN = os.path.join(HOME, '.local', 'bin')
+DEST = args.marketplaces or os.path.join(HOME, '.claude-toolkit', 'marketplaces')
+LOCAL_BIN = args.bin or os.path.join(HOME, '.local', 'bin')
 
 
 def find_claude():
@@ -85,8 +90,12 @@ def install_marketplaces(claude):
 
 def install_lsp():
     cfg = json.load(open(os.path.join(args.repo, 'config', 'plugin-sources.json'), encoding='utf-8')).get('lsp', {})
-    npm = shutil.which('npm.cmd' if WIN else 'npm') or shutil.which('npm')
-    if not npm and WIN:  # freshly installed Node isn't on this process's PATH yet
+    # On Windows, the kit's own per-user Node first (install-windows.ps1 puts it there), then PATH,
+    # then an all-users install, the same order as Find-Npm in common.ps1.
+    root = os.environ.get('AGENT_TOOLKIT_HOME') or os.path.join(os.environ.get('LOCALAPPDATA', ''), 'Programs', 'agent-toolkit')
+    own = os.path.join(root, 'node', 'npm.cmd') if WIN else ''
+    npm = (own if own and os.path.exists(own) else None) or shutil.which('npm.cmd' if WIN else 'npm') or shutil.which('npm')
+    if not npm and WIN:
         c = os.path.join(os.environ.get('ProgramFiles', r'C:\Program Files'), 'nodejs', 'npm.cmd')
         npm = c if os.path.exists(c) else None
     cache = os.environ.get('npm_config_cache') or os.path.join(HOME, '.npm-toolkit-cache')

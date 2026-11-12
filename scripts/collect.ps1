@@ -1,7 +1,8 @@
 <#
 .SYNOPSIS
   Refreshes the toolkit from a machine WITH internet. Downloads the latest T3 Code
-  nightly (or a pinned tag), Node, Git, gh, PowerShell 7, Python, WSL, the Ubuntu
+  nightly (or a pinned tag); Node, Git, gh, PowerShell 7 and Python in the forms that
+  install without admin rights (zips, portable Git, Python's NuGet build); WSL, the Ubuntu
   rootfs, Claude Code for Windows and Linux, the T3 tool caches at the versions
   the T3 build pins, Playwright browsers, a seeded npm cache, the public Claude
   Code skills with killer-skills' runtime and font pack, offline docs and the
@@ -72,46 +73,62 @@ foreach ($f in 'model-manifest.json','usage-model-rates.json') {
   if (Test-Path $src) { Copy-Item $src caches\t3-userdata\ -Force }
 }
 
+# The Windows apps are the forms that install without admin rights: zips and a portable Git that
+# install-windows.ps1 unpacks under %LOCALAPPDATA%\Programs\agent-toolkit, and Python's NuGet
+# build. No MSIs, which install for all users and need an administrator.
+
 # ---- Node ----
 $nodeIndex = (curl.exe -fsSL https://nodejs.org/dist/index.json | ConvertFrom-Json)
 $nodeVer = ($nodeIndex | Where-Object { $_.version -like "v$NodeMajor.*" } | Select-Object -First 1).version
 Write-Host "== Node $nodeVer"
 Get-ChildItem windows,linux -Filter 'node-v*' | Remove-Item -Force
 Get-ChildItem windows -Filter 'SHASUMS256-node-*' | Remove-Item -Force
-Dl "https://nodejs.org/dist/$nodeVer/node-$nodeVer-x64.msi" "windows\node-$nodeVer-x64.msi"
-Dl "https://nodejs.org/dist/$nodeVer/node-$nodeVer-linux-x64.tar.xz" "linux\node-$nodeVer-linux-x64.tar.xz"
 Dl "https://nodejs.org/dist/$nodeVer/SHASUMS256.txt" "windows\SHASUMS256-node-$nodeVer.txt"
+Dl "https://nodejs.org/dist/$nodeVer/node-$nodeVer-win-x64.zip" "windows\node-$nodeVer-win-x64.zip"
+Dl "https://nodejs.org/dist/$nodeVer/node-$nodeVer-linux-x64.tar.xz" "linux\node-$nodeVer-linux-x64.tar.xz"
+foreach ($f in @("windows\node-$nodeVer-win-x64.zip", "linux\node-$nodeVer-linux-x64.tar.xz")) {
+  $leaf = Split-Path -Leaf $f
+  $want = (Select-String -Path "windows\SHASUMS256-node-$nodeVer.txt" -Pattern "^([0-9a-f]{64})\s+$([regex]::Escape($leaf))$").Matches | Select-Object -First 1
+  if (-not $want -or (Get-FileHash $f -Algorithm SHA256).Hash.ToLower() -ne $want.Groups[1].Value) { throw "$leaf doesn't match Node's SHASUMS256.txt" }
+}
 
-# ---- Git for Windows ----
+# ---- Git for Windows (portable: a self-extracting archive, no installer) ----
 $gitTag = gh release view -R git-for-windows/git --json tagName -q .tagName
 Write-Host "== Git $gitTag"
 Get-ChildItem windows -Filter 'Git-*-64-bit.exe' | Remove-Item -Force
-gh release download $gitTag -R git-for-windows/git -D windows -p 'Git-*-64-bit.exe' --clobber
+Get-ChildItem windows -Filter 'PortableGit-*-64-bit.7z.exe' | Remove-Item -Force
+gh release download $gitTag -R git-for-windows/git -D windows -p 'PortableGit-*-64-bit.7z.exe' --clobber
+if ($LASTEXITCODE -ne 0) { throw "download failed: PortableGit $gitTag" }
 
 # ---- PowerShell 7 ----
 $psTag = gh release view -R PowerShell/PowerShell --json tagName -q .tagName
 Write-Host "== PowerShell $psTag"
-Get-ChildItem windows -Filter 'PowerShell-*-win-x64.msi' | Remove-Item -Force
-gh release download $psTag -R PowerShell/PowerShell -D windows -p '*-win-x64.msi' --clobber
+Get-ChildItem windows -Filter 'PowerShell-*-win-x64.*' | Remove-Item -Force
+gh release download $psTag -R PowerShell/PowerShell -D windows -p 'PowerShell-*-win-x64.zip' --clobber
+if ($LASTEXITCODE -ne 0) { throw "download failed: PowerShell $psTag zip" }
 
-# ---- Python ----
-# newest 3.13.x that actually ships a Windows installer (late security-only releases are source-only)
-$pyCandidates = ((curl.exe -fsSL https://www.python.org/ftp/python/) | Select-String -Pattern '3\.13\.\d+' -AllMatches).Matches.Value | Sort-Object { [version]$_ } -Unique -Descending
-$pyVer = $null
-foreach ($c in $pyCandidates) {
-  curl.exe -fsSI -o NUL "https://www.python.org/ftp/python/$c/python-$c-amd64.exe" 2>$null
-  if ($LASTEXITCODE -eq 0) { $pyVer = $c; break }
-}
-if (-not $pyVer) { throw 'no Python 3.13 release with a Windows installer found' }
-Write-Host "== Python $pyVer"
+# ---- Python (python.org's NuGet build: the same Python as its installer, as a plain archive) ----
+# newest 3.13.x on nuget.org, checked against the SHA-512 nuget.org records for it
+$pyVer = (curl.exe -fsSL https://api.nuget.org/v3-flatcontainer/python/index.json | ConvertFrom-Json).versions | Where-Object { $_ -match '^3\.13\.\d+$' } | Sort-Object { [version]$_ } -Descending | Select-Object -First 1
+if (-not $pyVer) { throw 'no Python 3.13 on nuget.org' }
+Write-Host "== Python $pyVer (NuGet)"
 Get-ChildItem windows -Filter 'python-*-amd64.exe' | Remove-Item -Force
-Dl "https://www.python.org/ftp/python/$pyVer/python-$pyVer-amd64.exe" "windows\python-$pyVer-amd64.exe"
+Get-ChildItem windows -Filter 'python.*.nupkg' | Remove-Item -Force
+$pyPkg = "windows\python.$pyVer.nupkg"
+Dl "https://api.nuget.org/v3-flatcontainer/python/$pyVer/python.$pyVer.nupkg" $pyPkg
+$entry = (curl.exe -fsSL --compressed "https://api.nuget.org/v3/registration5-semver1/python/$pyVer.json" | ConvertFrom-Json).catalogEntry
+$cat = curl.exe -fsSL --compressed $entry | ConvertFrom-Json
+if ($cat.packageHashAlgorithm -ne 'SHA512') { throw "nuget.org lists python $pyVer with a $($cat.packageHashAlgorithm) hash" }
+$sha = [Security.Cryptography.SHA512]::Create()
+$fs = [IO.File]::OpenRead((Join-Path $root $pyPkg))
+try { $got = [Convert]::ToBase64String($sha.ComputeHash($fs)) } finally { $fs.Dispose(); $sha.Dispose() }
+if ($got -ne $cat.packageHash) { throw "python.$pyVer.nupkg doesn't match the hash nuget.org records" }
 
 # ---- gh ----
 $ghTag = gh release view -R cli/cli --json tagName -q .tagName
 Write-Host "== gh $ghTag"
 Get-ChildItem windows,linux -Filter 'gh_*' | Remove-Item -Force
-gh release download $ghTag -R cli/cli -D windows -p '*_windows_amd64.msi' --clobber
+gh release download $ghTag -R cli/cli -D windows -p '*_windows_amd64.zip' --clobber
 gh release download $ghTag -R cli/cli -D linux   -p '*_linux_amd64.deb' --clobber
 
 # ---- WSL + Ubuntu ----

@@ -1,12 +1,15 @@
-"""Writes the release facts on the project page: docs/release.json and the generated blocks in docs/index.html.
+"""Writes the release facts on the project page: docs/release.json, the generated blocks in docs/index.html,
+and the smoke test's log in README.md.
 
-    python scripts/write-page.py --tag v1.0.3    # read a published release and VERSIONS.md, then write both
-    python scripts/write-page.py                 # rewrite the page from the committed docs/release.json
+    python scripts/write-page.py --tag v1.0.4 --log install.log --check check.log
+                                  # read a published release, VERSIONS.md and the build's logs, then write all three
+    python scripts/write-page.py  # rewrite the page and the README from the committed docs/release.json
 
-The weekly-release workflow runs the first form after it publishes, then docs/art/make-plan.py draws the
-README's load plan from the same docs/release.json. CI runs the second form and fails if the page changes,
-so a hand edit inside a generated block shows up. Each block sits between <!-- gen:NAME --> and
-<!-- /gen:NAME --> in docs/index.html; everything outside them is hand-written.
+The weekly-release workflow runs the first form after it publishes, with the logs of the install it ran as
+a standard user, then docs/art/make-plan.py draws the README's load plan from the same docs/release.json.
+Without --log, the log already in docs/release.json is kept. CI runs the second form and fails if the page
+or the README changes, so a hand edit inside a generated block shows up. Each block sits between
+<!-- gen:NAME --> and <!-- /gen:NAME -->; everything outside them is hand-written.
 
 Python 3.9+, standard library only. The --tag form needs the GitHub CLI.
 """
@@ -21,6 +24,7 @@ from datetime import datetime, timezone
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PAGE = os.path.join(ROOT, "docs", "index.html")
+README = os.path.join(ROOT, "README.md")
 DATA = os.path.join(ROOT, "docs", "release.json")
 REPO = "Real-Fruit-Snacks/agent-toolkit"
 
@@ -41,11 +45,11 @@ GROUPS = [
 PINS = [
     ("T3 Code", "T3 Code (Windows installer)"),
     ("Claude Code CLI", "Claude Code (Windows)"),
-    ("Node.js", "Node.js (msi)"),
-    ("Git for Windows", "Git for Windows"),
-    ("GitHub CLI", "GitHub CLI (msi)"),
-    ("PowerShell 7", "PowerShell 7 (msi)"),
-    ("Python", "Python (Windows)"),
+    ("Node.js", "Node.js (Windows zip)"),
+    ("Git for Windows", "Git for Windows (portable)"),
+    ("GitHub CLI", "GitHub CLI (Windows zip)"),
+    ("PowerShell 7", "PowerShell 7 (Windows zip)"),
+    ("Python", "Python (Windows NuGet)"),
     ("WSL platform", "WSL platform"),
     ("Ubuntu for WSL", "Ubuntu WSL rootfs"),
 ]
@@ -101,6 +105,8 @@ def read_release(tag):
     rel = json.loads(out)
     assets = []
     for a in rel["assets"]:
+        if a["name"].startswith("page--"):
+            continue   # this page itself, uploaded after the rest: not part of the load it describes
         d = (a.get("digest") or "").removeprefix("sha256:")
         if not re.fullmatch(r"[0-9a-f]{64}", d):
             sys.exit(f"{a['name']} has no sha256 digest on the release")
@@ -315,6 +321,84 @@ def block_assets(data):
     return "<tbody>" + "".join(rows) + "</tbody>"
 
 
+# ---------- the smoke test's logs ----------
+
+# a line that only says something worked: "  ok  playwright", "  marketplace x   ok", "  lsp npm  pyright: ok"
+OK_LINE = re.compile(r"^\s+(?:ok\s+\S.*|.*[\s:]ok)$")
+
+
+def read_log(path, collapse):
+    """A log the release build saved, as lines: CRs and trailing spaces gone, and with collapse,
+    each run of more than three ok lines cut to its first two and a count."""
+    with open(path, encoding="utf-8", errors="replace") as fh:
+        raw = [ln.rstrip() for ln in fh.read().lstrip("﻿").replace("\r", "").split("\n")]
+    out, run = [], []
+
+    def flush():
+        out.extend(run if len(run) <= 3 else run[:2] + [f"  ({len(run) - 2} more, all ok)"])
+        run.clear()
+
+    for ln in raw:
+        if collapse and OK_LINE.match(ln):
+            run.append(ln)
+        else:
+            flush()
+            out.append(ln)
+    flush()
+    while out and not out[0]:
+        out.pop(0)
+    while out and not out[-1]:
+        out.pop()
+    return out
+
+
+def read_logs(install, check, tag):
+    lines = read_log(install, True)
+    checks = read_log(check, False) if check else []
+    m = next((re.match(r"^== Installing for (?:[^\\\s]+\\)?(\S+), into ", ln) for ln in lines if ln.startswith("== Installing for ")), None)
+    standard = any(re.match(r"^\s+ok\s+account\s.*a standard user", ln) for ln in checks)
+    return {"tag": tag, "user": m.group(1) if m else "", "standard": standard, "flags": "", "lines": lines, "check": checks}
+
+
+def log_caption(log, code, b=lambda s: s):
+    """The words under the log; code() marks up a file or flag, for HTML or Markdown."""
+    if log["standard"]:
+        return (f"What {code('install-windows.ps1')} printed in the {log['tag']} build's smoke test, as {code(log['user'])}: "
+                f"a new account with {b('no admin rights')} on a clean GitHub Actions Windows runner, in Windows PowerShell 5.1, "
+                f"the whole install. Then {code('check-install.ps1')}, as the same account. Runs of ok lines are cut short where it says so.")
+    return (f"What {code('install-windows.ps1')} printed in the {log['tag']} build's smoke test. That build ran it as the runner's "
+            f"administrator, {code(log['user'])}, with the app installers and the environment skipped ({code(log['flags'])}). "
+            f"From the next build on, this is the whole install run as a new account with no admin rights.")
+
+
+def log_lines(log):
+    # check-install.ps1 opens with its own command line, so the second log needs only a gap
+    return list(log["lines"]) + ([""] + log["check"] if log["check"] else [])
+
+
+def block_log(data):
+    log = data["install_log"]
+    rows = []
+    for ln in log_lines(log):
+        s = e(ln)
+        if ln.startswith("== "):
+            s = f'<span class="h">{s}</span>'
+        elif ln.startswith("WARNING") or re.match(r"^\s+FAIL\s", ln):
+            s = f'<span class="w">{s}</span>'
+        elif re.match(r"^\s+\(\d+ more", ln):
+            s = f'<span class="cut">{s}</span>'
+        else:
+            s = re.sub(r"(?<=\s)ok(?=\s|$)", '<span class="ok">ok</span>', s, count=1)
+        rows.append(s)
+    cap = log_caption(log, lambda c: f"<code>{e(c)}</code>", lambda w: f"<strong>{w}</strong>")
+    return f"<figcaption>{cap}</figcaption>\n<pre><code>" + "\n".join(rows) + "</code></pre>"
+
+
+def readme_log(data):
+    log = data["install_log"]
+    return "\n" + log_caption(log, lambda c: f"`{c}`", lambda w: f"**{w}**") + "\n\n```text\n" + "\n".join(log_lines(log)) + "\n```\n"
+
+
 def blocks(data):
     tag = data["tag"]
     n = len(data["assets"])
@@ -333,15 +417,20 @@ def blocks(data):
         "mcp": block_mcp(data),
         "asset-count": str(n),
         "assets": block_assets(data),
+        "log": block_log(data),
     }
+
+
+def fill(text, name, body, where):
+    pat = re.compile(r"(<!-- gen:" + re.escape(name) + r" -->)(.*?)(<!-- /gen:" + re.escape(name) + r" -->)", re.S)
+    if not pat.search(text):
+        sys.exit(f"{where} has no <!-- gen:{name} --> block")
+    return pat.sub(lambda m: m.group(1) + body + m.group(3), text)
 
 
 def render(page, data):
     for name, body in blocks(data).items():
-        pat = re.compile(r"(<!-- gen:" + re.escape(name) + r" -->)(.*?)(<!-- /gen:" + re.escape(name) + r" -->)", re.S)
-        if not pat.search(page):
-            sys.exit(f"docs/index.html has no <!-- gen:{name} --> block")
-        page = pat.sub(lambda m: m.group(1) + body + m.group(3), page)
+        page = fill(page, name, body, "docs/index.html")
     # the release workflow also rewrites this heading with a regex; keep the two in step
     page, n = re.subn(r"<h2>Pinned in v[0-9.]+</h2>", f"<h2>Pinned in {data['tag']}</h2>", page)
     if n != 1:
@@ -358,22 +447,31 @@ def render(page, data):
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--tag", help="read this published release with gh and VERSIONS.md, and write docs/release.json")
+    ap.add_argument("--log", help="with --tag: what install-windows.ps1 printed in the build's smoke test")
+    ap.add_argument("--check", help="with --log: what check-install.ps1 printed after it")
     args = ap.parse_args()
+    if args.log and not args.tag:
+        ap.error("--log goes with --tag")
     if args.tag:
+        with open(DATA, encoding="utf-8") as fh:
+            before = json.load(fh)
         data = read_release(args.tag)
         data.update(read_versions())
+        # a run without --log keeps the log the page already shows, with the build it came from
+        data["install_log"] = read_logs(args.log, args.check, args.tag) if args.log else before["install_log"]
         with open(DATA, "w", encoding="utf-8", newline="\n") as fh:
             json.dump(data, fh, indent=1, ensure_ascii=False)
             fh.write("\n")
-        print(f"wrote docs/release.json ({data['tag']}, {len(data['assets'])} assets)")
+        print(f"wrote docs/release.json ({data['tag']}, {len(data['assets'])} assets, log from {data['install_log']['tag']})")
     with open(DATA, encoding="utf-8") as fh:
         data = json.load(fh)
-    with open(PAGE, encoding="utf-8") as fh:
-        page = fh.read()
-    new = render(page, data)
-    with open(PAGE, "w", encoding="utf-8", newline="\n") as fh:
-        fh.write(new)
-    print(f"wrote docs/index.html ({'changed' if new != page else 'no change'})")
+    for path, make in ((PAGE, lambda t: render(t, data)), (README, lambda t: fill(t, "log", readme_log(data), "README.md"))):
+        with open(path, encoding="utf-8") as fh:
+            old = fh.read()
+        new = make(old)
+        with open(path, "w", encoding="utf-8", newline="\n") as fh:
+            fh.write(new)
+        print(f"wrote {os.path.relpath(path, ROOT)} ({'changed' if new != old else 'no change'})")
 
 
 if __name__ == "__main__":

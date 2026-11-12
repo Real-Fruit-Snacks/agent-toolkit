@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>agent-toolkit: pinned installers and config for my coding setup</title>
-<meta name="description" content="One GitHub release, rebuilt every Sunday, that installs T3 Code, the Claude Code CLI, Node, Git, the GitHub CLI, PowerShell 7 and Python at pinned versions, with MCP servers, plugins, skills and every cache they would otherwise download. Windows, WSL and Linux.">
+<title>agent-toolkit: T3 Code and Claude Code on Windows, without admin rights</title>
+<meta name="description" content="One GitHub release, rebuilt every Sunday, that installs T3 Code, the Claude Code CLI, Node, Git, the GitHub CLI, PowerShell 7 and Python into your own Windows account from a normal PowerShell: no administrator, no UAC prompt, nothing downloaded while it runs. With MCP servers, plugins, skills and every cache they would otherwise fetch.">
 <link rel="canonical" href="https://real-fruit-snacks.github.io/agent-toolkit/">
 <meta property="og:title" content="agent-toolkit">
-<meta property="og:description" content="Pinned installers and config for my coding setup, in one GitHub release that is rebuilt every Sunday and checked by digest before it ships.">
+<meta property="og:description" content="T3 Code, Claude Code and the tools around them, installed on Windows without admin rights, from one GitHub release that is rebuilt every Sunday and checked by digest before it ships.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://real-fruit-snacks.github.io/agent-toolkit/">
 <meta property="og:image" content="https://real-fruit-snacks.github.io/agent-toolkit/assets/social.png">
@@ -37,6 +37,7 @@
     <a class="name" href="./" aria-label="agent-toolkit, top of the page">agent-toolkit</a>
     <nav aria-label="Page">
       <a href="#install">Install</a>
+      <a href="#where">Where it goes</a>
       <a href="#whats">What's pinned</a>
       <a href="#build">How it's built</a>
       <a href="#tested">Tested on</a>
@@ -50,8 +51,8 @@
 <section class="hero" style="--head:1.9673" aria-labelledby="title">
   <div class="wrap">
     <div class="intro">
-      <h1 id="title">Pinned installers and config for my coding&nbsp;setup</h1>
-      <p class="lede">T3 Code, the Claude Code CLI, Node, Git, the GitHub CLI, PowerShell&nbsp;7 and Python at tested versions, with <!-- gen:mcp-count -->36<!-- /gen:mcp-count --> MCP servers, <!-- gen:plugin-count -->240<!-- /gen:plugin-count --> plugins and every cache those tools would otherwise download on first run, in one GitHub release. Two machines built from the same release come out the same.</p>
+      <h1 id="title">T3 Code and Claude Code on Windows, without admin&nbsp;rights</h1>
+      <p class="lede">One GitHub release installs T3 Code, the Claude Code CLI, Node, Git, the GitHub CLI, PowerShell&nbsp;7 and Python into your own account from a normal PowerShell window, with <!-- gen:mcp-count -->36<!-- /gen:mcp-count --> MCP servers, <!-- gen:plugin-count -->240<!-- /gen:plugin-count --> plugins and every cache they would otherwise download on first run. No UAC prompt, no admin password, and nothing fetched while it runs.</p>
       <p class="acts"><!-- gen:get --><a class="get" href="https://github.com/Real-Fruit-Snacks/agent-toolkit/releases/tag/v1.0.3">Get v1.0.3 from GitHub</a><!-- /gen:get --> <a class="how" href="#install">Install steps</a></p>
     </div>
 
@@ -72,25 +73,30 @@
 
 <section class="install" id="install" aria-labelledby="install-h">
   <div class="wrap">
-    <h2 id="install-h">Install</h2>
+    <h2 id="install-h">Install, without admin rights</h2>
     <div class="install-grid">
       <ol class="steps">
         <li>
+          <h3>Open PowerShell, not as administrator</h3>
+          <div class="cmd"><code>Set-ExecutionPolicy -Scope Process Bypass -Force</code><button class="copy" type="button" data-copy="Set-ExecutionPolicy -Scope Process Bypass -Force">Copy</button></div>
+          <p>Start it the normal way. Windows PowerShell 5.1, which every Windows 10 and 11 machine has, is enough. Windows blocks downloaded scripts by default; this line lets this one window run them, changes nothing for any other, and needs no admin rights.</p>
+        </li>
+        <li>
           <h3>Get the scripts</h3>
-          <p>Clone this repo, or download <code>repo--agent-toolkit-*.zip</code> from the <a href="https://github.com/Real-Fruit-Snacks/agent-toolkit/releases/latest">latest release</a> and extract it. Run the rest from its root.</p>
+          <p>Clone this repo, or download <code>repo--agent-toolkit-*.zip</code> from the <a href="https://github.com/Real-Fruit-Snacks/agent-toolkit/releases/latest">latest release</a> and extract it anywhere you can write to. Run the rest from its root, in the same window.</p>
         </li>
         <li>
           <h3>Download the release</h3>
-          <div class="cmd"><code>.\scripts\download-release.ps1 -To C:\toolkit-assets</code><button class="copy" type="button" data-copy=".\scripts\download-release.ps1 -To C:\toolkit-assets">Copy</button></div>
-          <p>Every asset into one folder, through the GitHub CLI if it's there and plain HTTPS if not. A file already there is kept only if its hash matches.</p>
+          <div class="cmd"><code>.\scripts\download-release.ps1</code><button class="copy" type="button" data-copy=".\scripts\download-release.ps1">Copy</button></div>
+          <p>What a Windows install uses, about 4&nbsp;GB, into an <code>assets</code> folder there, once it has checked the drive has room. It goes through the GitHub CLI if that's there, and plain HTTPS through your system proxy if not. <code>-Include wsl</code> adds the WSL distro, <code>-All</code> everything.</p>
         </li>
         <li>
           <h3>Check it and restore the folders</h3>
-          <div class="cmd"><code>.\scripts\unpack-release.ps1 -From C:\toolkit-assets</code><button class="copy" type="button" data-copy=".\scripts\unpack-release.ps1 -From C:\toolkit-assets">Copy</button></div>
-          <p>Checks every file against <code>SHA256SUMS.txt</code>, joins the distro's parts and checks the result, then puts each asset back into <code>windows\</code>, <code>linux\</code>, <code>wsl\</code> or <code>caches\</code>.</p>
+          <div class="cmd"><code>.\scripts\unpack-release.ps1 -From .\assets</code><button class="copy" type="button" data-copy=".\scripts\unpack-release.ps1 -From .\assets">Copy</button></div>
+          <p>Checks every file against <code>SHA256SUMS.txt</code>, then puts each one back into <code>windows\</code>, <code>linux\</code>, <code>wsl\</code> or <code>caches\</code>, and this page into <code>page\</code> to read offline. <code>-Move</code> moves the files instead of copying them, for a small disk.</p>
         </li>
         <li id="platforms">
-          <h3>Install, from an elevated PowerShell</h3>
+          <h3>Install, still without admin rights</h3>
           <div class="tabs" role="tablist" aria-label="Platform">
             <button type="button" role="tab" id="tab-win" aria-controls="pane-win" aria-selected="true">Windows</button>
             <button type="button" role="tab" id="tab-wsl" aria-controls="pane-wsl" aria-selected="false" tabindex="-1">WSL</button>
@@ -98,21 +104,21 @@
           </div>
           <div class="pane" role="tabpanel" id="pane-win" aria-labelledby="tab-win">
             <div class="cmd"><code>.\scripts\install-windows.ps1</code><button class="copy" type="button" data-copy=".\scripts\install-windows.ps1">Copy</button></div>
-            <p>Installs the apps silently, restores the tool and browser caches, installs the MCP servers, plugins and skills offline, seeds config only where none exists, and sets the variables that turn off the updaters and telemetry. Open a new terminal afterwards.</p>
+            <p>Puts the apps, the Claude Code CLI and the caches in one folder in your account, adds it to your own PATH, installs the MCP servers, plugins and skills offline, seeds config only where none exists, and sets the user variables that turn off the updaters and telemetry. Open a new terminal afterwards; <code>.\scripts\check-install.ps1</code> checks it all from there. The download isn't needed after that.</p>
           </div>
           <div class="pane" role="tabpanel" id="pane-wsl" aria-labelledby="tab-wsl">
             <div class="cmd"><code>.\scripts\setup-wsl.ps1</code><button class="copy" type="button" data-copy=".\scripts\setup-wsl.ps1">Copy</button></div>
-            <p>Installs WSL from the bundled MSI and imports <code>ubuntu-dev</code>, a distro that already has Git, Node, the GitHub CLI and the Claude Code CLI inside it. The first time WSL is turned on, Windows may want a reboot.</p>
+            <p>Imports <code>ubuntu-dev</code>, a distro that already has Git, Node, the GitHub CLI and the Claude Code CLI inside it, into your account. With WSL already on the machine, that needs no admin rights. Turning WSL on in the first place does, once: without WSL the script stops and says so, and from an elevated PowerShell it installs WSL from the bundled MSI, after which Windows may want a reboot.</p>
           </div>
           <div class="pane" role="tabpanel" id="pane-lin" aria-labelledby="tab-lin">
             <div class="cmd"><code>sudo bash scripts/install-linux.sh</code><button class="copy" type="button" data-copy="sudo bash scripts/install-linux.sh">Copy</button></div>
-            <p>For a standalone Debian or Ubuntu machine, with <code>linux/</code> and <code>caches/</code> restored: installs T3 Code from the <code>.deb</code> and provisions the same tools as the WSL distro.</p>
+            <p>For a standalone Debian or Ubuntu machine, where you do need root, with <code>linux/</code> and <code>caches/</code> restored: installs T3 Code from the <code>.deb</code> and provisions the same tools as the WSL distro.</p>
           </div>
         </li>
       </ol>
 
       <figure class="log">
-        <figcaption>What <code>install-windows.ps1</code> printed on a clean GitHub Actions Windows runner, in the v1.0.2 build's smoke test. The runner skips the app installers and the environment (<code>-SkipApps -SkipEnv</code>); the rest ran. Trimmed where it says so.</figcaption>
+        <!-- gen:log --><figcaption>What <code>install-windows.ps1</code> printed in the v1.0.2 build's smoke test. That build ran it as the runner's administrator, <code>runneradmin</code>, with the app installers and the environment skipped (<code>-SkipApps -SkipEnv</code>). From the next build on, this is the whole install run as a new account with no admin rights.</figcaption>
 <pre><code><span class="h">== Restoring T3 tool cache</span>
 <span class="h">== Restoring T3 manifest snapshots</span>
 <span class="h">== Restoring Playwright browsers</span>
@@ -152,8 +158,44 @@ Done. Open a NEW terminal, then launch T3 Code.
 In Settings &gt; Providers &gt; Claude set Binary path to:
   C:\Users\runneradmin\.local\bin\claude.exe
 and add the endpoint variables from config\claude-provider-env.example.
-Offline docs: C:\Users\runneradmin\agent-toolkit-docs</code></pre>
+Offline docs: C:\Users\runneradmin\agent-toolkit-docs</code></pre><!-- /gen:log -->
       </figure>
+    </div>
+  </div>
+</section>
+
+<section class="where" id="where" aria-labelledby="where-h">
+  <div class="wrap">
+    <div class="where-head">
+      <h2 id="where-h">Where it all goes</h2>
+      <p>Into your own account and nowhere else, and everything heavy into one folder, the install root: <code>%LOCALAPPDATA%\<wbr>Programs\<wbr>agent-toolkit</code>, or wherever <code>-Root</code> puts it. Nothing is installed for other users, so nothing needs an administrator, and taking it out doesn't either.</p>
+    </div>
+    <div class="scroll"><table class="paths">
+      <caption class="sr-only">What the install puts where</caption>
+      <thead><tr><th scope="col">What</th><th scope="col">Where</th></tr></thead>
+      <tbody>
+        <tr><th scope="row">The apps</th><td><code>node</code>, <code>git</code>, <code>gh</code>, <code>pwsh</code> and <code>python</code> in the root: Node.js, the portable Git for Windows, the GitHub CLI, PowerShell&nbsp;7, and python.org's NuGet build of Python 3.13</td></tr>
+        <tr><th scope="row">Claude Code CLI</th><td><code>bin</code> in the root, with the MCP and language-server binaries</td></tr>
+        <tr><th scope="row">MCP servers, plugins</th><td><code>npm</code>, <code>venv-mcp</code> and <code>plugins</code> in the root: global npm packages, a virtual environment per Python server, the vendored marketplaces</td></tr>
+        <tr><th scope="row">Caches</th><td><code>cache</code> in the root: npm's, Playwright's browsers, killer-skills' packs, the Python wheels</td></tr>
+        <tr><th scope="row">T3 Code</th><td><code>%LOCALAPPDATA%\<wbr>Programs\<wbr>t3code</code>, from its own per-user installer; its data and tool cache in <code>~\<wbr>.t3</code>, where T3 keeps them</td></tr>
+        <tr><th scope="row">Skills, config</th><td><code>~\<wbr>.claude</code> and <code>~\<wbr>.claude.json</code>, where Claude Code keeps them</td></tr>
+        <tr><th scope="row">PATH and variables</th><td>Your user environment, <code>HKCU\<wbr>Environment</code>, with <code>AGENT_TOOLKIT_HOME</code> pointing at the root. The variables are listed in <a href="https://github.com/Real-Fruit-Snacks/agent-toolkit/blob/main/config/env-vars.md">config/env-vars.md</a>.</td></tr>
+      </tbody>
+    </table></div>
+    <p class="where-foot">To take it out: uninstall T3 Code from Settings, Apps, delete the install root, and remove its entries from your user PATH. Run the install elevated anyway and it warns you, then installs into the elevated account's profile, which is the wrong one if you elevated with someone else's account.</p>
+
+    <div class="vdi">
+      <h3 id="vdi">On a VDI desktop</h3>
+      <p>Citrix, VMware Horizon, Azure Virtual Desktop and Windows&nbsp;365 desktops are the machines this is most often for, and it's built around what they're like.</p>
+      <ul class="plain">
+        <li><strong>Small disks.</strong> The default download is the Windows part only, about 4&nbsp;GB of the 10, with the free space checked first. <code>unpack-release.ps1 -Move</code> stops the release taking the space twice, and once the install is done you can delete it.</li>
+        <li><strong>Roaming profiles</strong> copy everything in the profile except <code>AppData\Local</code> at every logon and logoff. The install root sits in <code>AppData\Local</code>, so the gigabytes stay out of that copy; <code>check-install.ps1</code> reports what's left in the profile, and every weekly build fails if it passes 1&nbsp;GB.</li>
+        <li><strong>Desktops reset at logoff</strong> keep only the profile. FSLogix profile containers keep all of it, so the default root works. Where <code>AppData\Local</code> isn't kept (classic roaming profiles, some Citrix Profile Management setups), install with <code>-Root</code> on a drive that persists, for example <code>-Root D:\agent-toolkit</code>. <code>check-install.ps1</code> says which kind of profile it sees.</li>
+        <li><strong>Multi-session hosts</strong> are fine: each person installs into their own account, and each T3 Code takes the next free port from 3773.</li>
+        <li><strong>Proxies:</strong> <code>download-release.ps1</code> uses the system proxy with your Windows sign-in, as a browser would. <code>AppData\Roaming</code> on a network share doesn't matter: the install keeps nothing there.</li>
+        <li><strong>WSL&nbsp;2</strong> needs virtualization that most VDI hosts don't pass through. <code>setup-wsl.ps1</code> says so when WSL can't start; the Windows install doesn't need it.</li>
+      </ul>
     </div>
   </div>
 </section>
@@ -207,7 +249,7 @@ Offline docs: C:\Users\runneradmin\agent-toolkit-docs</code></pre>
 <section class="why" id="why" aria-labelledby="why-h">
   <div class="wrap">
     <h2 id="why-h" class="sr-only">Why pin everything</h2>
-    <p class="statement">Each of these tools fetches something the first time it runs: an updater, a headless browser, a device agent, a model manifest. On a machine that should stay on one known build, or talk to one endpoint, those fetches are the problem. The release carries them all.</p>
+    <p class="statement">Each of these tools fetches something the first time it runs: an updater, a headless browser, a device agent, a model manifest. On a machine you don't administer, or one that should stay on a known build, those fetches are the problem: some are blocked, and the rest move it off the version you meant. The release carries them all.</p>
     <div class="why-rest">
       <p>The install sets these as user environment variables, among others. The full list, with what each one turns off, is in <a href="https://github.com/Real-Fruit-Snacks/agent-toolkit/blob/main/config/env-vars.md">config/env-vars.md</a>.</p>
       <pre><code>T3CODE_DISABLE_AUTO_UPDATE=1
@@ -233,7 +275,7 @@ PIP_NO_INDEX=1</code></pre>
       </li>
       <li>
         <p class="when"><b>collect</b> Windows runner</p>
-        <div><h3>Fetch everything</h3><p><code>collect.ps1</code> downloads the newest T3 nightly, Claude Code, the installers, the plugin marketplaces, the MCP servers and every cache, and reconciles the versions.</p></div>
+        <div><h3>Fetch everything</h3><p><code>collect.ps1</code> downloads the newest T3 nightly, Claude Code, the Windows apps in the forms that install without admin rights, the plugin marketplaces, the MCP servers and every cache, checks the Node zip and the Python package against their publishers' hashes, and reconciles the versions.</p></div>
       </li>
       <li>
         <p class="when"><b>distro</b> Ubuntu runner</p>
@@ -241,7 +283,7 @@ PIP_NO_INDEX=1</code></pre>
       </li>
       <li>
         <p class="when"><b>publish</b> Windows runner</p>
-        <div><h3>Install, pack, verify, publish</h3><p>Runs the T3 and Claude Code binaries and <code>check-pins.ps1</code>, then <code>install-windows.ps1</code> on the clean runner and checks what it registered. Writes <code>VERSIONS.md</code>, packs the assets and cuts any of 1900&nbsp;MiB or more into parts, uploads a draft, and has <code>verify-release.ps1</code> compare every digest GitHub recorded with <code>SHA256SUMS.txt</code>. Only then it publishes, and rewrites this page.</p></div>
+        <div><h3>Install as a standard user, pack, verify, publish</h3><p>Runs the T3 and Claude Code binaries and <code>check-pins.ps1</code>. Then it makes a new local account with no admin rights and, as that account, in Windows PowerShell&nbsp;5.1, runs the whole <code>install-windows.ps1</code>, apps included, followed by <code>check-install.ps1</code>, which also fails if more than 1&nbsp;GB lands where a roaming profile would copy it. Writes <code>VERSIONS.md</code>, packs the assets and cuts any of 1900&nbsp;MiB or more into parts, uploads a draft, and has <code>verify-release.ps1</code> compare every digest GitHub recorded with <code>SHA256SUMS.txt</code>. Only then it publishes, rewrites this page, the install log included, and attaches the page to the release as a zip, to read offline.</p></div>
       </li>
     </ol>
   </div>
@@ -252,16 +294,21 @@ PIP_NO_INDEX=1</code></pre>
     <div>
       <h2 id="tested-h">Tested on</h2>
       <ul class="plain">
+        <li>A clean GitHub Actions Windows runner, <strong>as a standard user</strong>: every weekly build installs as a new account with no admin rights, in Windows PowerShell 5.1, and checks the apps, MCP servers, plugins, language servers and skills from that account before it publishes.</li>
         <li>Windows 11 Pro 26300 with Windows PowerShell 5.1: the bake, collect and pin checks run here.</li>
         <li>Ubuntu 24.04 noble under WSL 2: the distro is baked and its contents checked here.</li>
-        <li>A clean GitHub Actions Windows runner: every weekly build runs the install script there and checks the MCP servers, plugins, language servers and skills before it publishes.</li>
-        <li><strong>Not tested:</strong> a full install from the release assets on a second physical machine, end to end.</li>
+        <li><strong>Not tested:</strong> a full install from the release assets on a second physical machine, end to end, or on a managed machine with AppLocker or WDAC rules. Nor on a real VDI desktop yet: the weekly build checks what a plain runner can show (a standard user, the profile footprint), not Citrix, Horizon or FSLogix themselves.</li>
       </ul>
     </div>
     <div>
       <h2>Known issues</h2>
       <ul class="plain">
-        <li>The app installers run with silent flags that are right for the pinned versions; a newer installer may change them.</li>
+        <li>If Group Policy sets PowerShell's execution policy, <code>Set-ExecutionPolicy -Scope Process</code> can't override it and the scripts won't run. Ask IT to allow them.</li>
+        <li>Where AppLocker, WDAC or another allow-list stops programs from running out of your profile, the per-user apps won't start. Nothing here works around that, on purpose. The scripts also need PowerShell's full language mode, which a WDAC policy can take away.</li>
+        <li>Windows puts the machine PATH before the user PATH, so a Node, Git, GitHub CLI, PowerShell&nbsp;7 or Python that IT installed for all users runs first in a new terminal. <code>check-install.ps1</code> says when it does.</li>
+        <li>Turning WSL on needs an administrator, once per machine. Importing the distro after that doesn't. WSL&nbsp;2 also needs virtualization, which most VDI desktops don't have.</li>
+        <li>On a desktop that doesn't keep <code>AppData\Local</code> between sessions, the default install root is gone at the next sign-in. Install with <code>-Root</code> on a drive that persists.</li>
+        <li>T3 Code's installer runs with silent flags that are right for the pinned build; a newer one may change them.</li>
         <li>T3 Code pins its on-demand tool versions per build. After bumping T3, run <code>scripts/check-pins.ps1 -Fix</code>, or the cache is ignored and a download is attempted.</li>
         <li>Importing the raw Ubuntu rootfs instead of the baked distro needs a network to fetch the Playwright browsers.</li>
         <li>On Linux without PowerShell, join the distro by hand: <code>cat name.part1 name.part2 name.part3 &gt; name</code>, then <code>sha256sum -c name.sha256</code>.</li>

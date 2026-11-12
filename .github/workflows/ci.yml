@@ -7,8 +7,9 @@ on:
 
 jobs:
   page:
-    # The release facts on the project page and the README's load plan are generated from docs/release.json.
-    # Fail if the committed files no longer match what scripts/write-page.py and docs/art/make-plan.py write.
+    # The release facts and the smoke test's log on the project page, and the README's log and load plan, are
+    # generated from docs/release.json. Fail if the committed files no longer match what scripts/write-page.py
+    # and docs/art/make-plan.py write.
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
@@ -20,7 +21,7 @@ jobs:
           python -m pip install --quiet -r docs/art/requirements.txt
           python scripts/write-page.py
           python docs/art/make-plan.py
-          git diff --exit-code -- docs/index.html docs/assets/plan-dark.svg docs/assets/plan-light.svg
+          git diff --exit-code -- README.md docs/index.html docs/assets/plan-dark.svg docs/assets/plan-light.svg
 
   scripts:
     # Every script in the repo at least parses: PowerShell with its own parser, shell with bash -n, Python with py_compile.

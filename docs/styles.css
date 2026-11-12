@@ -201,7 +201,7 @@ section { scroll-margin-top: var(--space-m); }
 @keyframes shown { 0% { opacity: 1; } 100% { opacity: 0; } }
 
 /* ---------- sections ---------- */
-.install, .whats, .why, .build, .tested { padding: var(--space-xl-3xl) 0 0; }
+.install, .where, .whats, .why, .build, .tested { padding: var(--space-xl-3xl) 0 0; }
 .foot { margin-top: var(--space-xl-3xl); }
 
 /* install: numbered steps on the left, the real log on the right */
@@ -235,11 +235,22 @@ section { scroll-margin-top: var(--space-m); }
 .log .w { color: var(--amber); }
 .log .cut { color: var(--mute); font-style: italic; }
 
-/* what's pinned */
-.whats-head { display: grid; gap: var(--space-xs) var(--space-l-2xl); align-items: end; margin-bottom: var(--space-l); }
-.whats-head h2 { margin: 0; }
-.whats-head p { color: var(--mute); margin: 0; max-width: 34em; }
-@media (min-width: 900px) { .whats-head { grid-template-columns: auto 1fr; } }
+/* where it goes, and what's pinned: a heading with its note beside it */
+.whats-head, .where-head { display: grid; gap: var(--space-xs) var(--space-l-2xl); align-items: end; margin-bottom: var(--space-l); }
+.whats-head h2, .where-head h2 { margin: 0; }
+.whats-head p, .where-head p { color: var(--mute); margin: 0; max-width: 34em; }
+@media (min-width: 900px) { .whats-head, .where-head { grid-template-columns: auto 1fr; } }
+.paths tbody th { white-space: nowrap; }
+.paths td { color: var(--mute); }
+.paths td code { color: var(--ink); overflow-wrap: break-word; }
+.where-foot { color: var(--mute); max-width: 44em; margin: 0; }
+.where-foot code { color: var(--ink); }
+@media (max-width: 600px) { .paths tbody th { white-space: normal; } }
+.vdi { margin-top: var(--space-l-2xl); }
+.vdi h3 { margin-bottom: var(--space-2xs); }
+.vdi > p { color: var(--mute); max-width: 44em; margin: 0 0 var(--space-s); }
+.vdi .plain { max-width: 52em; }
+.vdi code { color: var(--ink); white-space: nowrap; }
 .whats-grid { display: grid; gap: var(--space-l-2xl); }
 @media (min-width: 900px) { .whats-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
 table { width: 100%; border-collapse: collapse; font-size: .95rem; }

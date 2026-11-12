@@ -186,63 +186,67 @@ jobs:
           & $cc.FullName --version
           .\scripts\check-pins.ps1
 
-      - uses: actions/setup-node@v4
-        with: { node-version: '24' }
       - uses: actions/setup-python@v5
-        with: { python-version: '3.13' }
-      - name: install smoke test (caches, config, MCP servers, plugins on a clean machine)
-        shell: pwsh
+        with: { python-version: '3.13' }   # for write-page.py and make-plan.py below; the install brings its own Python
+      - name: install as a standard user, then check it from that account
+        shell: powershell   # Windows PowerShell 5.1, the shell every standard user has
         run: |
-          # -SkipApps skips the MSI/EXE installers, which also skips the claude.exe copy, so place it first
-          $bin = Join-Path $env:USERPROFILE '.local\bin'; New-Item -ItemType Directory -Force -Path $bin | Out-Null
-          Copy-Item (Get-ChildItem windows\claude-code -Filter 'claude-*-win32-x64.exe' | Select-Object -First 1).FullName (Join-Path $bin 'claude.exe') -Force
-          $env:DISABLE_AUTOUPDATER = '1'; $env:CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC = '1'
-          .\scripts\install-windows.ps1 -SkipApps -SkipEnv
-          $claude = Join-Path $bin 'claude.exe'
-          & $claude --version
+          # The kit is for people who can't be administrators, so the smoke test runs as one: a new
+          # local account in Users only runs the whole install, apps included, then check-install.ps1,
+          # through a scheduled task in Windows PowerShell 5.1. The logs are what it printed, and the
+          # page and README show them once the release is published.
+          $user = 'atk-user'
+          $pw = 'Atk-' + [guid]::NewGuid().ToString('N') + '!9'
+          Write-Host "::add-mask::$pw"
+          New-LocalUser -Name $user -Password (ConvertTo-SecureString $pw -AsPlainText -Force) -PasswordNeverExpires -UserMayNotChangePassword -Description 'agent-toolkit smoke test' | Out-Null
+          Add-LocalGroupMember -SID 'S-1-5-32-545' -Member $user
+          if (Get-LocalGroupMember -SID 'S-1-5-32-544' | Where-Object { $_.Name -like "*\$user" }) { throw "$user is an administrator" }
 
-          $cfg = Get-Content (Join-Path $env:USERPROFILE '.claude.json') -Raw | ConvertFrom-Json
-          if ($cfg.hasCompletedOnboarding -ne $true) { throw 'onboarding seed was not merged into .claude.json' }
-          $names = @($cfg.mcpServers.PSObject.Properties.Name)
-          Write-Host "registered MCP servers: $($names.Count) -> $($names -join ', ')"
-          foreach ($want in 'playwright','memory','sequential-thinking','desktop-commander','fetch','markitdown') { if ($names -notcontains $want) { throw "default MCP server not registered: $want" } }
-          foreach ($p in $cfg.mcpServers.PSObject.Properties) {
-            $cmd = $p.Value.command; $first = @($p.Value.args)[0]
-            if ($cmd -eq 'node') { if (-not (Test-Path $first)) { throw "MCP $($p.Name): entry point missing: $first" } }
-            elseif (-not (Test-Path $cmd)) { throw "MCP $($p.Name): command missing: $cmd" }
+          # read access to the checkout and its restored layout; a folder of its own for the logs
+          $ws = $env:GITHUB_WORKSPACE
+          $run = 'C:\atk-run'
+          New-Item -ItemType Directory -Force -Path $run | Out-Null
+          foreach ($g in @(@($ws, 'RX'), @($run, 'M'))) {
+            icacls $g[0] /grant "${user}:(OI)(CI)$($g[1])" /Q | Out-Null
+            if ($LASTEXITCODE) { throw "icacls $($g[0]) failed: $LASTEXITCODE" }
           }
-          $venvs = @(Get-ChildItem (Join-Path $env:USERPROFILE '.venv-mcp') -Directory -ErrorAction SilentlyContinue).Count
-          Write-Host "python MCP venvs: $venvs"
-          if ($venvs -lt 10) { throw "only $venvs Python MCP servers installed" }
 
-          $plugins = & $claude plugin list --json | ConvertFrom-Json
-          $enabled = @($plugins | Where-Object enabled)
-          Write-Host "plugins enabled: $($enabled.Count) -> $(($enabled.id) -join ', ')"
-          $broken = @($plugins | Where-Object { $_.errors })
-          if ($broken) { throw "plugins with load errors: $(($broken | ForEach-Object { "$($_.id): $($_.errors)" }) -join '; ')" }
-          if ($enabled.Count -lt 12) { throw "only $($enabled.Count) plugins enabled" }
-          if (-not (Get-Command pyright-langserver -ErrorAction SilentlyContinue) -and -not (Test-Path (Join-Path $env:APPDATA 'npm\pyright-langserver.cmd'))) { throw 'pyright language server not installed' }
-          if (-not (Test-Path (Join-Path $bin 'rust-analyzer.exe'))) { throw 'rust-analyzer not installed' }
+          # cmd's own redirection, so the logs hold exactly what a console would show, native output included
+          $ps = "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe"
+          @(
+            '@echo off',
+            "cd /d `"$ws`"",
+            "`"$ps`" -NoProfile -ExecutionPolicy Bypass -File scripts\install-windows.ps1 > $run\install.log 2>&1",
+            "> $run\install.exit echo %ERRORLEVEL%",
+            # -MaxProfileMB: what a roaming profile would copy at every logon stays small (VDI)
+            "`"$ps`" -NoProfile -ExecutionPolicy Bypass -File scripts\check-install.ps1 -StandardUser -MaxProfileMB 1024 -Offline > $run\check.log 2>&1",
+            "> $run\check.exit echo %ERRORLEVEL%"
+          ) | Set-Content "$run\run.cmd" -Encoding ascii
 
-          if (-not (Test-Path (Join-Path $env:USERPROFILE '.claude\skills\docx\SKILL.md'))) { throw 'skills not installed' }
-          if (-not (Test-Path (Join-Path $env:USERPROFILE '.claude\skills\full-send\SKILL.md'))) { throw 'tstack skills not installed' }
-          foreach ($s in 'killer-design', 'killer-repo', 'killer-council') { if (-not (Test-Path (Join-Path $env:USERPROFILE ".claude\skills\$s\SKILL.md"))) { throw "$s skill not installed" } }
-          if (-not (Test-Path (Join-Path $env:USERPROFILE 'agent-toolkit-docs\mcp-servers.md'))) { throw 'MCP catalog not written' }
-
-          # killer-design, offline: a page set in a face from the font pack, screenshotted from the runtime
-          foreach ($d in 'killer-skills\runtime.json', 'killer-skills-fonts\fonts.json') { if (-not (Test-Path (Join-Path $env:USERPROFILE ".cache\$d"))) { throw "killer-skills pack not installed: $d" } }
-          $kd = Join-Path $env:USERPROFILE '.claude\skills\killer-design\scripts'
-          $site = Join-Path $env:TEMP 'ks-site'; New-Item -ItemType Directory -Force -Path $site | Out-Null
-          node (Join-Path $kd 'fonts.mjs') add $site 'IBM Plex Sans'
-          if ($LASTEXITCODE) { throw 'fonts.mjs could not add a face from the font pack' }
-          Set-Content (Join-Path $site 'index.html') '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Toolkit check</title><link rel="stylesheet" href="assets/fonts/fonts.css"><style>body{margin:2rem;font:1.25rem/1.5 "IBM Plex Sans",sans-serif}</style></head><body><main><h1>Offline</h1><p>Set in IBM Plex Sans from the font pack.</p></main></body></html>'
-          $dead = 'http://127.0.0.1:9'
-          $env:npm_config_offline = 'true'; $env:PLAYWRIGHT_DOWNLOAD_HOST = $dead; $env:HTTPS_PROXY = $dead; $env:HTTP_PROXY = $dead
-          $env:NODE_USE_ENV_PROXY = '1'; $env:NO_PROXY = '127.0.0.1,localhost'
-          $shot = node (Join-Path $kd 'shoot.mjs') $site --widths 390 --slices 1 --no-full --out (Join-Path $env:TEMP 'ks-shot') 2>&1 | Out-String
-          $code = $LASTEXITCODE
-          Write-Host $shot
-          if ($code -or $shot -match 'installing it once|Downloading Chromium' -or $shot -notmatch 'IBM Plex Sans \(web font loaded') { throw 'killer-design could not screenshot offline from the runtime and the font pack' }
+          $task = 'atk-install'
+          $action = New-ScheduledTaskAction -Execute 'cmd.exe' -Argument "/d /c $run\run.cmd" -WorkingDirectory $ws
+          $settings = New-ScheduledTaskSettingsSet -ExecutionTimeLimit (New-TimeSpan -Minutes 70) -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
+          Register-ScheduledTask -TaskName $task -Action $action -Settings $settings -User $user -Password $pw -RunLevel Limited | Out-Null
+          Start-ScheduledTask -TaskName $task
+          $deadline = (Get-Date).AddMinutes(75)
+          while (-not (Test-Path "$run\check.exit") -and (Get-Date) -lt $deadline) {
+            Start-Sleep 15
+            $info = Get-ScheduledTaskInfo -TaskName $task
+            # 0x41301: still running; 0x41303: not run yet. Anything else, with the task idle, means it ended.
+            if ((Get-ScheduledTask -TaskName $task).State -eq 'Ready' -and $info.LastTaskResult -notin 0x41301, 0x41303 -and -not (Test-Path "$run\check.exit")) { Start-Sleep 5; break }
+          }
+          $info = Get-ScheduledTaskInfo -TaskName $task
+          Write-Host "== install-windows.ps1, as $user"
+          Get-Content "$run\install.log" -ErrorAction SilentlyContinue
+          Write-Host "== check-install.ps1, as $user"
+          Get-Content "$run\check.log" -ErrorAction SilentlyContinue
+          Copy-Item "$run\install.log", "$run\check.log" $env:RUNNER_TEMP -ErrorAction SilentlyContinue
+          Unregister-ScheduledTask -TaskName $task -Confirm:$false
+          $ie = "$(Get-Content "$run\install.exit" -ErrorAction SilentlyContinue)".Trim()
+          $ce = "$(Get-Content "$run\check.exit" -ErrorAction SilentlyContinue)".Trim()
+          if (-not $ce) { throw ("the task as $user didn't finish; last result 0x{0:x}" -f $info.LastTaskResult) }
+          if ($ie -ne '0') { throw "install-windows.ps1 exited $ie as $user" }
+          if ($ce -ne '0') { throw "check-install.ps1 exited $ce as $user" }
 
       - name: next version
         id: ver
@@ -275,13 +279,21 @@ jobs:
         shell: pwsh
         run: |
           $tag = '${{ steps.ver.outputs.tag }}'
-          $pins = (Get-Content VERSIONS.md | Select-String -Pattern '^\| (T3 Code \(Windows installer\)|Claude Code \(Windows\)|Node\.js \(msi\)|Git for Windows|GitHub CLI \(msi\)|PowerShell 7 \(msi\)|Python \(Windows\)|WSL platform) \| ([^|]+) \|' -AllMatches).Matches | ForEach-Object { "- $($_.Groups[1].Value -replace ' \(.*\)','') $($_.Groups[2].Value.Trim())" }
+          $pins = (Get-Content VERSIONS.md | Select-String -Pattern '^\| (T3 Code \(Windows installer\)|Claude Code \(Windows\)|Node\.js \(Windows zip\)|Git for Windows \(portable\)|GitHub CLI \(Windows zip\)|PowerShell 7 \(Windows zip\)|Python \(Windows NuGet\)|WSL platform) \| ([^|]+) \|' -AllMatches).Matches | ForEach-Object { "- $($_.Groups[1].Value -replace ' \(.*\)','') $($_.Groups[2].Value.Trim())" }
           @(
-            "Weekly build. Pinned installers and config for my coding setup; see the README for the install flow.",
+            "Weekly build. T3 Code, the Claude Code CLI and the tools around them for Windows, installed into your own account with no admin rights: from a normal PowerShell, run download-release.ps1, unpack-release.ps1 and install-windows.ps1. The README has the steps and where everything goes.",
+            "",
+            "Before this was published, the whole install, apps included, ran as a new account with no admin rights on a clean Windows runner, in Windows PowerShell 5.1, and check-install.ps1 passed as that account.",
             "",
             "This release pins:",
             "",
             $pins,
+            "",
+            "The Windows apps come as zips (Node, the GitHub CLI, PowerShell 7), the portable Git for Windows and Python's NuGet build, plus T3 Code's per-user installer. They, the MCP servers and the caches all go in one folder, %LOCALAPPDATA%\Programs\agent-toolkit unless install-windows.ps1 -Root picks another.",
+            "",
+            "On VDI desktops: download-release.ps1 fetches only the Windows assets by default (about 4 GB; -Include wsl, -Include linux or -All for the rest) and checks for disk space first, unpack-release.ps1 -Move keeps the release from taking the space twice, and nothing points back at it after the install. The install keeps its weight out of the parts of the profile a roaming profile copies at every logon, and the smoke test fails if more than 1 GB lands there. On a desktop that doesn't keep AppData\Local between sessions, install with -Root on a drive that does; check-install.ps1 says what kind of profile it sees. Several people can install on one multi-session host. WSL 2 needs virtualization that most VDI hosts don't pass through, and setup-wsl.ps1 says so when it can't start; the Windows install doesn't need it.",
+            "",
+            "page--agent-toolkit-$tag.zip is this release's project page, uploaded once the release is published, to read offline: unpack-release.ps1 puts it in page\.",
             "",
             "Also included: the public Claude Code skills set with a Python wheelhouse, the tstack skills and my killer-skills (killer-design, killer-repo, killer-council) with their runtime and font pack, a seeded npm cache, Claude Code and T3 Code docs as markdown, Linux copies of the browser and tool caches, and a provisioned Ubuntu distro for WSL.",
             "",
@@ -310,23 +322,40 @@ jobs:
         run: .\scripts\verify-release.ps1 -Tag ${{ steps.ver.outputs.tag }} -Local
 
       - name: publish
-        if: ${{ inputs.publish != false }}
+        if: ${{ github.event_name == 'schedule' || inputs.publish }}   # a schedule has no inputs, and an empty one compares equal to false
         shell: pwsh
         run: gh release edit ${{ steps.ver.outputs.tag }} --draft=false
 
       - name: regenerate cover + page table
-        if: ${{ inputs.publish != false }}
+        if: ${{ github.event_name == 'schedule' || inputs.publish }}   # a schedule has no inputs, and an empty one compares equal to false
         shell: pwsh
         run: |
           $tag = '${{ steps.ver.outputs.tag }}'
           (Get-Content docs/index.html -Raw) -replace '<h2>Pinned in v[0-9.]+</h2>', "<h2>Pinned in $tag</h2>" | Set-Content docs/index.html -NoNewline
           # the published release's assets, sizes and digests, plus VERSIONS.md, onto the page and the README's load plan
-          python scripts/write-page.py --tag $tag
+          # with the standard user's logs from the smoke test, onto the page and into the README
+          python scripts/write-page.py --tag $tag --log "$env:RUNNER_TEMP\install.log" --check "$env:RUNNER_TEMP\check.log"
           if ($LASTEXITCODE) { throw 'write-page.py failed' }
           python -m pip install --quiet -r docs/art/requirements.txt
           python docs/art/make-plan.py
           if ($LASTEXITCODE) { throw 'make-plan.py failed' }
-          git add docs/index.html docs/release.json docs/assets/plan-dark.svg docs/assets/plan-light.svg
+
+          # The page as just written for this release, on the release itself, to read offline (a VDI
+          # desktop may not reach github.io). It can't be in SHA256SUMS.txt, which is fixed before
+          # the page exists; verify-release.ps1 checks it has the digest GitHub records instead.
+          $stage = Join-Path $env:RUNNER_TEMP 'page'
+          Remove-Item $stage -Recurse -Force -ErrorAction SilentlyContinue
+          New-Item -ItemType Directory -Force -Path $stage | Out-Null
+          foreach ($f in 'index.html', 'styles.css', 'script.js', 'manifest.webmanifest', 'favicon.ico', 'icon.svg', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png', 'apple-touch-icon.png') { Copy-Item (Join-Path docs $f) $stage }
+          Copy-Item docs/fonts, docs/assets (Join-Path $stage '.') -Recurse
+          $pageZip = Join-Path $env:RUNNER_TEMP "page--agent-toolkit-$tag.zip"
+          Compress-Archive -Path (Join-Path $stage '*') -DestinationPath $pageZip -Force
+          gh release upload $tag $pageZip --clobber
+          if ($LASTEXITCODE) { throw 'page upload failed' }
+          .\scripts\verify-release.ps1 -Tag $tag
+          if ($LASTEXITCODE) { throw 'the release is no longer consistent with the page on it' }
+
+          git add README.md docs/index.html docs/release.json docs/assets/plan-dark.svg docs/assets/plan-light.svg
           if (-not (git diff --cached --quiet)) {
             git commit -m "Page: point at $tag"
             # main can move during a long run; replay the commit on top before pushing. --autostash
