@@ -117,8 +117,6 @@ jobs:
           sudo test -f /tmp/chk/etc/wsl.conf
           sudo test -d /tmp/chk/home/dev/.claude/skills/docx
           sudo test -f /tmp/chk/home/dev/.claude/skills/full-send/SKILL.md
-          for s in killer-design killer-repo killer-council; do sudo test -f /tmp/chk/home/dev/.claude/skills/$s/SKILL.md; done
-          sudo test -f /tmp/chk/home/dev/.cache/killer-skills-fonts/fonts.json
           sudo ls /tmp/chk/home/dev/.local/share/claude/versions/
           # what the provisioner registered, read from the image's own config
           sudo python3 - <<'PY'
@@ -247,7 +245,7 @@ jobs:
           switch ($What) {
             'probe'   { "user=$([Security.Principal.WindowsIdentity]::GetCurrent().Name) profile=$env:USERPROFILE localappdata=$env:LOCALAPPDATA elevated=$(Test-Elevated)"; exit 0 }
             'install' { & (Join-Path $Repo 'scripts\install-windows.ps1'); exit $LASTEXITCODE }
-            'check'   { & (Join-Path $Repo 'scripts\check-install.ps1') -StandardUser -MaxProfileMB 1024 -Offline; exit $LASTEXITCODE }
+            'check'   { & (Join-Path $Repo 'scripts\check-install.ps1') -StandardUser -MaxProfileMB 1024; exit $LASTEXITCODE }
           }
           '@ -replace '(?m)^          ', '' | Set-Content "$run\as-user.ps1" -Encoding ascii
 
@@ -370,7 +368,7 @@ jobs:
             "",
             "page--agent-toolkit-$tag.zip is this release's project page, uploaded once the release is published, to read offline: unpack-release.ps1 puts it in page\.",
             "",
-            "Also included: the public Claude Code skills set with a Python wheelhouse, the tstack skills and my killer-skills (killer-design, killer-repo, killer-council) with their runtime and font pack, a seeded npm cache, Claude Code and T3 Code docs as markdown, Linux copies of the browser and tool caches, and a provisioned Ubuntu distro for WSL.",
+            "Also included: the public Claude Code skills set with a Python wheelhouse, the tstack skills, a seeded npm cache, Claude Code and T3 Code docs as markdown, Linux copies of the browser and tool caches, and a provisioned Ubuntu distro for WSL.",
             "",
             "Every file and its SHA256 is in VERSIONS.md and SHA256SUMS.txt. Built by the weekly-release workflow."
           ) | Set-Content release-notes.md

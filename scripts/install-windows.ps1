@@ -12,8 +12,7 @@
     npm                           global npm packages
     venv-mcp                      the Python MCP servers, one virtual environment each
     plugins                       the vendored Claude Code plugin marketplaces
-    cache                         npm's cache, Playwright's browsers, killer-skills' packs and
-                                  the Python wheels
+    cache                         npm's cache, Playwright's browsers and the Python wheels
   T3 Code installs per user into %LOCALAPPDATA%\Programs\t3code and keeps its own data and tool
   cache in ~\.t3. Claude Code's config, skills and plugins go in ~\.claude. The root's folders go
   on your user PATH and the variables in config\env-vars.md into your user environment (HKCU).
@@ -222,7 +221,6 @@ if (-not $SkipCaches) {
   # this run's own tools look in the root's caches, whatever the user environment says yet
   $env:npm_config_cache = $npmCache
   $env:PLAYWRIGHT_BROWSERS_PATH = $pwCache
-  $env:KILLER_SKILLS_CACHE = $cacheDir
 
   Write-Host '== Restoring T3 tool cache'
   $t3tools = Join-Path $home_ '.t3\tools'
@@ -254,37 +252,6 @@ if (-not $SkipCaches) {
     $skills = Join-Path $home_ '.claude\skills'
     New-Item -ItemType Directory -Force -Path $skills | Out-Null
     Get-ChildItem (Join-Path $caches 'claude-skills') -Directory | ForEach-Object { Copy-Item $_.FullName (Join-Path $skills $_.Name) -Recurse -Force }
-  }
-
-  Write-Host "== killer-skills packs (the runtime and font pack killer-design and killer-repo use) -> $cacheDir"
-  # The same folder names, and the same installed-sha256.txt markers, that killer-skills' own
-  # installer writes under KILLER_SKILLS_CACHE, so either one sees the other's packs as current.
-  $ks = Join-Path $caches 'killer-skills'
-  if (Test-Path (Join-Path $ks 'SHA256SUMS.txt')) {
-    $ksSums = @{}
-    foreach ($l in Get-Content (Join-Path $ks 'SHA256SUMS.txt')) { if ($l -match '^([0-9a-f]{64})  (.+)$') { $ksSums[$Matches[2]] = $Matches[1] } }
-    foreach ($pack in @(@('killer-skills-runtime-windows-x64.zip', 'killer-skills'), @('killer-skills-fonts.zip', 'killer-skills-fonts'))) {
-      $zip = Join-Path $ks $pack[0]
-      if (-not (Test-Path $zip)) { Write-Warning "caches\killer-skills has no $($pack[0])"; continue }
-      $hash = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLower()
-      if ($hash -ne $ksSums[$pack[0]]) { throw "$($pack[0]) doesn't match caches\killer-skills\SHA256SUMS.txt" }
-      $target = Join-Path $cacheDir $pack[1]
-      $marker = Join-Path $target 'installed-sha256.txt'
-      if ((Test-Path $marker) -and ((Get-Content $marker -Raw).Trim() -eq $hash)) { Write-Host "  $($pack[1]) is up to date"; continue }
-      New-Item -ItemType Directory -Force -Path $cacheDir | Out-Null
-      $stage = "$target.new-$PID"
-      Remove-Item $stage -Recurse -Force -ErrorAction SilentlyContinue
-      [IO.Compression.ZipFile]::ExtractToDirectory($zip, $stage)
-      Set-Content (Join-Path $stage 'installed-sha256.txt') $hash -Encoding ascii
-      if (Test-Path $target) {
-        $old = "$target.old-$PID"
-        try { [IO.Directory]::Move($target, $old) }
-        catch { Remove-Item $stage -Recurse -Force -ErrorAction SilentlyContinue; Write-Warning "$target is in use (a Claude Code session running a skill?); close it and run this again"; continue }
-        [IO.Directory]::Move($stage, $target)
-        Remove-Item $old -Recurse -Force -ErrorAction SilentlyContinue
-      } else { [IO.Directory]::Move($stage, $target) }
-      Write-Host "  installed $($pack[1])"
-    }
   }
 
   $py = Find-Python
@@ -347,7 +314,7 @@ if (-not $SkipConfig) {
 Write-Host '== Setting user environment variables'
 # Where things are: set whatever else is skipped, since the tools can't find the root without them.
 $where = [ordered]@{ AGENT_TOOLKIT_HOME = $Root }
-if (-not $SkipCaches) { $where.PLAYWRIGHT_BROWSERS_PATH = $pwCache; $where.KILLER_SKILLS_CACHE = $cacheDir }
+if (-not $SkipCaches) { $where.PLAYWRIGHT_BROWSERS_PATH = $pwCache }
 foreach ($k in $where.Keys) { [Environment]::SetEnvironmentVariable($k, $where[$k], 'User') }
 if (-not $SkipEnv) {
   $vars = @{

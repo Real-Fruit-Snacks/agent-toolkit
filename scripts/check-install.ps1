@@ -3,7 +3,7 @@
   Checks an install from the side of the account that ran install-windows.ps1, as a terminal
   opened now would see it: every app runs from the install root at the pinned version and is on
   that account's PATH, the user variables are set, and the MCP servers, plugins, language
-  servers, skills and killer-skills packs are in place. It also says what kind of machine and
+  servers and skills are in place. It also says what kind of machine and
   profile it sees (a VDI desktop, a multi-session host, a roaming profile or a profile
   container) and how much the install put where a roaming profile would copy it at every logon.
   Needs no admin rights, changes nothing, and prints one line per check; exits 1 if any failed.
@@ -12,15 +12,13 @@
 .PARAMETER Root         The install root to check. Default: AGENT_TOOLKIT_HOME, as the install
                         recorded it, or %LOCALAPPDATA%\Programs\agent-toolkit.
 .PARAMETER SkipApps     Leave out the app checks (for an install run with -SkipApps).
-.PARAMETER SkipCaches   Leave out the MCP, plugin, skill and pack checks (-SkipCaches).
+.PARAMETER SkipCaches   Leave out the MCP, plugin and skill checks (-SkipCaches).
 .PARAMETER SkipConfig   Leave out the Claude Code config check (-SkipConfig).
 .PARAMETER SkipEnv      Leave out the environment variable checks (-SkipEnv).
 .PARAMETER StandardUser Also fail if this account is an administrator. The weekly build runs
                         the whole install, then this, as a new account with no admin rights.
 .PARAMETER MaxProfileMB Also fail if the install put more than this many MB in the parts of the
                         profile a roaming profile copies (the weekly build sets a limit).
-.PARAMETER Offline      Also have killer-design set a page in a face from the font pack and
-                        screenshot it from the runtime, with this process's network cut off.
 #>
 [CmdletBinding()]
 param(
@@ -30,8 +28,7 @@ param(
   [switch]$SkipConfig,
   [switch]$SkipEnv,
   [switch]$StandardUser,
-  [int]$MaxProfileMB = 0,
-  [switch]$Offline
+  [int]$MaxProfileMB = 0
 )
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'common.ps1')
@@ -67,7 +64,6 @@ Import-NewTerminalEnvironment
 if (-not $Root) { $Root = Get-ToolkitRoot }
 $Root     = $Root.TrimEnd('\')
 $binDir   = Join-Path $Root 'bin'
-$cacheDir = if ($env:KILLER_SKILLS_CACHE) { $env:KILLER_SKILLS_CACHE } else { Join-Path $Root 'cache' }
 $userPath = @("$([Environment]::GetEnvironmentVariable('Path', 'User'))" -split ';' | Where-Object { $_ } | ForEach-Object { $_.TrimEnd('\') })
 
 Write-Host '== Account'
@@ -201,36 +197,10 @@ if (-not $SkipCaches) {
   if (Test-Path (Join-Path $Root 'npm\pyright-langserver.cmd')) { Ok 'pyright' "$Root\npm\pyright-langserver.cmd" } else { Fail 'pyright' "pyright-langserver not in $Root\npm" }
   if (Test-Path (Join-Path $binDir 'rust-analyzer.exe')) { Ok 'rust-analyzer' "$binDir\rust-analyzer.exe" } else { Fail 'rust-analyzer' "not in $binDir" }
 
-  Write-Host '== Skills and packs'
-  $skills = 'docx', 'full-send', 'killer-design', 'killer-repo', 'killer-council'
+  Write-Host '== Skills'
+  $skills = 'docx', 'full-send'
   $gone = @($skills | Where-Object { -not (Test-Path (Join-Path $home_ ".claude\skills\$_\SKILL.md")) })
   if ($gone) { Fail 'skills' "missing from ~\.claude\skills: $($gone -join ', ')" } else { Ok 'skills' "$($skills -join ', ') and the rest" }
-  foreach ($d in 'killer-skills\runtime.json', 'killer-skills-fonts\fonts.json') {
-    if (Test-Path (Join-Path $cacheDir $d)) { Ok 'pack' (Join-Path $cacheDir $d) } else { Fail 'pack' "$(Join-Path $cacheDir $d) missing" }
-  }
-
-  if ($Offline) {
-    Write-Host '== killer-design, offline: a page set from the font pack, screenshotted from the runtime'
-    $kd = Join-Path $home_ '.claude\skills\killer-design\scripts'
-    $node = if (Test-Path "$Root\node\node.exe") { "$Root\node\node.exe" } else { 'node' }
-    $site = Join-Path $env:TEMP "ks-site-$PID"; $shots = Join-Path $env:TEMP "ks-shot-$PID"
-    New-Item -ItemType Directory -Force -Path $site | Out-Null
-    try {
-      $out = Invoke-Native { & $node (Join-Path $kd 'fonts.mjs') add $site 'IBM Plex Sans' }
-      if ($LASTEXITCODE) { Fail 'font pack' "fonts.mjs could not add a face: $(@($out) -join ' ')" }
-      else {
-        Write-Utf8 (Join-Path $site 'index.html') '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Toolkit check</title><link rel="stylesheet" href="assets/fonts/fonts.css"><style>body{margin:2rem;font:1.25rem/1.5 "IBM Plex Sans",sans-serif}</style></head><body><main><h1>Offline</h1><p>Set in IBM Plex Sans from the font pack.</p></main></body></html>'
-        # Every download path points at a closed port, for this process and its children only.
-        $dead = 'http://127.0.0.1:9'
-        $env:npm_config_offline = 'true'; $env:PLAYWRIGHT_DOWNLOAD_HOST = $dead; $env:HTTPS_PROXY = $dead; $env:HTTP_PROXY = $dead
-        $env:NODE_USE_ENV_PROXY = '1'; $env:NO_PROXY = '127.0.0.1,localhost'
-        $shot = (Invoke-Native { & $node (Join-Path $kd 'shoot.mjs') $site --widths 390 --slices 1 --no-full --out $shots }) -join "`n"
-        $code = $LASTEXITCODE
-        if ($code -or $shot -match 'installing it once|Downloading Chromium' -or $shot -notmatch 'IBM Plex Sans \(web font loaded') { Fail 'offline shot' "killer-design could not screenshot offline:`n$shot" }
-        else { Ok 'offline shot' 'IBM Plex Sans loaded from the font pack; Chromium from the runtime' }
-      }
-    } finally { Remove-Item $site, $shots -Recurse -Force -ErrorAction SilentlyContinue }
-  }
 }
 
 Write-Host '== Footprint'

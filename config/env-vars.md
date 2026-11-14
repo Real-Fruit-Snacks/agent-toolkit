@@ -11,9 +11,8 @@ the baked distro sets the same values in `/etc/profile.d/agent-toolkit.sh`.
 |---|---|---|
 | `AGENT_TOOLKIT_HOME` | the install root, `%LOCALAPPDATA%\Programs\agent-toolkit` unless `-Root` picked another | Where the apps, binaries and caches are; `check-install.ps1` and a re-run of the install scripts read it. |
 | `PLAYWRIGHT_BROWSERS_PATH` | `<root>\cache\ms-playwright` | Where the restored browser cache lives, so `playwright install` is never needed. |
-| `KILLER_SKILLS_CACHE` | `<root>\cache` | Where killer-design and killer-repo find their runtime and font pack. |
 
-These three are set even with `-SkipEnv`, because the tools can't find the root
+These two are set even with `-SkipEnv`, because the tools can't find the root
 without them.
 
 ## PATH

@@ -1,5 +1,5 @@
 {
-  "$comment": "Claude Code plugin marketplaces vendored into caches/claude-plugins by scripts/vendor-plugins.py. Only plugins whose files live in the repo are kept (no network to fetch the rest). Remote-only MCP connectors in those plugins are disabled so they don't error offline; skills, commands, agents, hooks and LSP configs are untouched. 'enable' lists the plugins switched on by the install scripts; every other kept plugin is browsable in /plugin. 'name' renames a vendored marketplace whose upstream name is reserved for Anthropic's GitHub sources. 'skills' lists plain skill repos whose <path>/* folders are copied into ~/.claude/skills; 'ref': 'latest-release' takes them from the repo's latest release tag instead of main. For killer-skills, collect.ps1 also takes that release's runtime and font pack into caches/killer-skills.",
+  "$comment": "Claude Code plugin marketplaces vendored into caches/claude-plugins by scripts/vendor-plugins.py. Only plugins whose files live in the repo are kept (no network to fetch the rest). Remote-only MCP connectors in those plugins are disabled so they don't error offline; skills, commands, agents, hooks and LSP configs are untouched. 'enable' lists the plugins switched on by the install scripts; every other kept plugin is browsable in /plugin. 'name' renames a vendored marketplace whose upstream name is reserved for Anthropic's GitHub sources. 'skills' lists plain skill repos whose <path>/* folders are copied into ~/.claude/skills; 'ref': 'latest-release' takes them from the repo's latest release tag instead of main.",
   "marketplaces": [
     {
       "repo": "anthropics/claude-plugins-official",
@@ -74,12 +74,6 @@
     {
       "repo": "t3dotgg/tstack",
       "path": "skills",
-      "license": "MIT"
-    },
-    {
-      "repo": "Real-Fruit-Snacks/killer-skills",
-      "path": "skills",
-      "ref": "latest-release",
       "license": "MIT"
     }
   ]
