@@ -61,7 +61,7 @@ Citrix, VMware Horizon, Azure Virtual Desktop and Windows 365 desktops are the m
 
 ### What the install printed
 <!-- gen:log -->
-What `install-windows.ps1` printed in the v1.0.4 build's smoke test, as `atk-user`: a new account with **no admin rights** on a clean GitHub Actions Windows runner, in Windows PowerShell 5.1, the whole install. Then `check-install.ps1`, as the same account. Runs of ok lines are cut short where it says so.
+What `install-windows.ps1` printed in the v1.0.5 build's smoke test, as `atk-user`: a new account with **no admin rights** on a clean GitHub Actions Windows runner, in Windows PowerShell 5.1, the whole install. Then `check-install.ps1`, as the same account. Runs of ok lines are cut short where it says so.
 
 ```text
 == Installing for runnervmm7ud1\atk-user, into C:\Users\atk-user\AppData\Local\Programs\agent-toolkit
@@ -76,11 +76,9 @@ What `install-windows.ps1` printed in the v1.0.4 build's smoke test, as `atk-use
 == Restoring T3 manifest snapshots
 == Restoring Playwright browsers -> C:\Users\atk-user\AppData\Local\Programs\agent-toolkit\cache\ms-playwright
 == Installing npm packages from the seeded cache -> C:\Users\atk-user\AppData\Local\Programs\agent-toolkit\cache\npm
+WARNING: global npm install of agent-device from the cache failed; T3 still works from its own tool cache
 WARNING: global npm install of expo-device-hub from the cache failed; T3 still works from its own tool cache
 == Installing Claude Code skills
-== killer-skills packs (the runtime and font pack killer-design and killer-repo use) -> C:\Users\atk-user\AppData\Local\Programs\agent-toolkit\cache
-  installed killer-skills
-  installed killer-skills-fonts
 == Installing Python packages for the document skills (wheels kept in C:\Users\atk-user\AppData\Local\Programs\agent-toolkit\cache\pip-wheelhouse)
 == MCP servers
 == npm MCP servers (19)
@@ -117,7 +115,7 @@ Offline docs: C:\Users\atk-user\agent-toolkit-docs
 Nothing points back at the downloaded release any more; delete it to free the space.
 To check the install from a new terminal: .\scripts\check-install.ps1
 
-== check-install.ps1 -StandardUser -MaxProfileMB 1024 -Offline
+== check-install.ps1 -StandardUser -MaxProfileMB 1024
 == Account
   ok    account          runnervmm7ud1\atk-user, a standard user: not in Administrators
 == This machine
@@ -130,16 +128,16 @@ To check the install from a new terminal: .\scripts\check-install.ps1
   ok    git              git version 2.56.1.windows.1  (C:\Users\atk-user\AppData\Local\Programs\agent-toolkit\git\cmd\git.exe)
   note  git              a new terminal runs C:\Program Files\Git\bin\git.exe first; it was installed for all users
   ok    bash             GNU bash, version 5.3.15(2)-release (x86_64-pc-cygwin)  (C:\Users\atk-user\AppData\Local\Programs\agent-toolkit\git\bin\bash.exe)
-  ok    gh               gh version 2.103.3 (2026-10-26)  (C:\Users\atk-user\AppData\Local\Programs\agent-toolkit\gh\bin\gh.exe)
+  ok    gh               gh version 2.104.0 (2026-11-12)  (C:\Users\atk-user\AppData\Local\Programs\agent-toolkit\gh\bin\gh.exe)
   note  gh               a new terminal runs C:\Program Files\GitHub CLI\gh.exe first; it was installed for all users
   ok    pwsh             PowerShell 7.7.0  (C:\Users\atk-user\AppData\Local\Programs\agent-toolkit\pwsh\pwsh.exe)
   note  pwsh             a new terminal runs C:\Program Files\PowerShell\7\pwsh.exe first; it was installed for all users
   ok    python           Python 3.13.17  (C:\Users\atk-user\AppData\Local\Programs\agent-toolkit\python\python.exe)
   note  python           a new terminal runs C:\hostedtoolcache\windows\Python\3.12.10\x64\python.exe first; it was installed for all users
-  ok    claude           2.1.322 (Claude Code)  (C:\Users\atk-user\AppData\Local\Programs\agent-toolkit\bin\claude.exe)
+  ok    claude           2.1.325 (Claude Code)  (C:\Users\atk-user\AppData\Local\Programs\agent-toolkit\bin\claude.exe)
   ok    npm prefix       C:\Users\atk-user\AppData\Local\Programs\agent-toolkit\npm
   note  npm prefix       npm_config_prefix is set to C:\npm\prefix here, so npm install -g in a terminal goes there; the kit's own packages are in C:\Users\atk-user\AppData\Local\Programs\agent-toolkit\npm
-  ok    t3 code          0.1.10.0  (C:\Users\atk-user\AppData\Local\Programs\t3code\T3 Code (Beta).exe)
+  ok    t3 code          0.1.10.0  (C:\Users\atk-user\AppData\Local\Programs\t3code\T3 Code (Nightly).exe)
 == User environment variables
   ok    variables        8 checked, including AGENT_TOOLKIT_HOME and DISABLE_AUTOUPDATER
 == Claude Code config
@@ -152,15 +150,11 @@ To check the install from a new terminal: .\scripts\check-install.ps1
   ok    plugins          12 enabled and loading
   ok    pyright          C:\Users\atk-user\AppData\Local\Programs\agent-toolkit\npm\pyright-langserver.cmd
   ok    rust-analyzer    C:\Users\atk-user\AppData\Local\Programs\agent-toolkit\bin\rust-analyzer.exe
-== Skills and packs
-  ok    skills           docx, full-send, killer-design, killer-repo, killer-council and the rest
-  ok    pack             C:\Users\atk-user\AppData\Local\Programs\agent-toolkit\cache\killer-skills\runtime.json
-  ok    pack             C:\Users\atk-user\AppData\Local\Programs\agent-toolkit\cache\killer-skills-fonts\fonts.json
-== killer-design, offline: a page set from the font pack, screenshotted from the runtime
-  ok    offline shot     IBM Plex Sans loaded from the font pack; Chromium from the runtime
+== Skills
+  ok    skills           docx, full-send and the rest
 == Footprint
-  ok    install root     C:\Users\atk-user\AppData\Local\Programs\agent-toolkit: 10,108 MB
-  ok    profile          365 MB where a roaming profile would copy it: ~\.t3\tools 331, ~\.claude\skills 19, ~\.claude\plugins 4, ~\agent-toolkit-docs 11
+  ok    install root     C:\Users\atk-user\AppData\Local\Programs\agent-toolkit: 9,895 MB
+  ok    profile          357 MB where a roaming profile would copy it: ~\.t3\tools 330, ~\.claude\skills 12, ~\.claude\plugins 4, ~\agent-toolkit-docs 11
 
 Every check passed, for runnervmm7ud1\atk-user.
 ```

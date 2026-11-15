@@ -1,91 +1,86 @@
 {
- "tag": "v1.0.4",
- "published": "2026-11-12T07:37:36Z",
+ "tag": "v1.0.5",
+ "published": "2026-11-15T18:10:38Z",
  "assets": [
   {
    "name": "caches--claude-code-docs.zip",
-   "size": 3270753,
-   "sha256": "259e9a664a3f7636bb04f2997a8f779329bd075698810b7f63de835350dd4496"
+   "size": 3311595,
+   "sha256": "af70a3215f9771de8d1352a050af6a00ae6c52b12d096b6f2298fb39d6239983"
   },
   {
    "name": "caches--claude-plugins.zip",
-   "size": 20429958,
-   "sha256": "8cb1a8fc9aeb6233622b6bae4957d8454e8db1d14a9d4fb399a387650dece884"
+   "size": 21221339,
+   "sha256": "4d43441343ee072dcd6a4e0b7ebbbd7049405aeb1a9568284fbf10404bbce233"
   },
   {
    "name": "caches--claude-skills.zip",
-   "size": 6924965,
-   "sha256": "9f22e9f26134a9007418cbb16853c6d949c518992847547fc5c849385d22d763"
-  },
-  {
-   "name": "caches--killer-skills.zip",
-   "size": 163476775,
-   "sha256": "8d9bd7ca3d690c38d259b96b579831486cae615293c3fd734abbac55733b74f1"
+   "size": 4404345,
+   "sha256": "5e93833b66ad2c67f261d6e4c59a2bd1b57403e07e789e90cf8686b3563ad52c"
   },
   {
    "name": "caches--lsp-bin.zip",
    "size": 33592312,
-   "sha256": "0e610413a575bdb57f107ef3fe5d25d69d7f5efa6273a70eefa4c5a1b00e0423"
+   "sha256": "57f994d39a768d9a72a6c02ab6545c2e4941fa63186065acf8a318c768eb16b8"
   },
   {
    "name": "caches--mcp-bin.zip",
    "size": 56906346,
-   "sha256": "931f76813752d04e8d11a3bbea65265ac6be4d7a18bb29873967676663452f52"
+   "sha256": "d87b554f0b54716f1c68d9d39e20c4c010f84db079031e251643f0f6d16d79fa"
   },
   {
    "name": "caches--npm-cache.zip",
-   "size": 1205637123,
-   "sha256": "8174532c15d93b4a20e8f464b45370b16b95eb06cc21fb0a320e139805e6a6b6"
+   "size": 1227130342,
+   "sha256": "f146ab3c760cce5b8f7e7d47aafaccce8e86b0e179210f3a25a08f77d0d469f7"
   },
   {
    "name": "caches--npm.zip",
-   "size": 13894061,
-   "sha256": "f845f0185ddb71dee0299f4fa02013725acd6699f37269a599448711011dac59"
+   "size": 13894166,
+   "sha256": "5f4b6c40dd2f4d4b80902ba12a2b338b472074e8623427f4bd15df96d45d9cc7"
   },
   {
    "name": "caches--pip-wheelhouse.zip",
-   "size": 937621815,
-   "sha256": "f74b2a60ea44b936027bf78cc44b1f277b2c50cd02a6a4ee54ef9c6bcf0cf172"
+   "size": 935678329,
+   "sha256": "12c3ea2b3d48c4abd47244410035203c6032d68099d3db60e6017cd05facfc63"
   },
   {
    "name": "caches--playwright-browsers-linux.zip",
-   "size": 320125796,
-   "sha256": "0ba4582a47c4c915000dec8c8edbb01431a18f5b81360a4aff8c5d51c077d41e"
+   "size": 321374429,
+   "sha256": "9d703b2b1dfdae3aead48e1a4c3725e40a22121f6aaf91a704f7f701d0eb30e3"
   },
   {
    "name": "caches--playwright-browsers.zip",
-   "size": 356011759,
-   "sha256": "5a81aa6e8a008d63567525929a6efb83fc6e296522384cc87333289d90cfb7e9"
+   "size": 358216338,
+   "sha256": "dddb1d2a1903590cf5d4e14e1b7e257390e64aa5de3bd8ac7dbf0591d6d05466"
   },
   {
    "name": "caches--t3-tools-linux.zip",
-   "size": 147227082,
-   "sha256": "191bb026dfe282d206b6ae3883e21bdc10a76aa0fccf0dfc9fdb89680d5739c3"
+   "size": 147021082,
+   "sha256": "d60dd457eb42ea9ec8b90147d0adcf4d258190d9d890602f3efa6831bd050f4a"
   },
   {
    "name": "caches--t3-tools-win.zip",
-   "size": 149370334,
-   "sha256": "fc001f4dda5581451d4681493ba33527250db6b54292e7b1e9ce06272e2f139c"
+   "size": 148899513,
+   "sha256": "07fe63b14c93ecf0a50382e3238d15938a3b11492e0bb8fb41b3e42ee503270a"
   },
   {
    "name": "caches--t3-userdata.zip",
    "size": 150547,
-   "sha256": "e188de137071035d7d399632161efd83e3bc602ba3d557ce22e41f1d75d65bea"
+   "sha256": "9def00485e825d2574614981efc8085995f47d09a05720185765b0913b6ee68a"
   },
   {
-   "name": "linux--claude-2.1.322-linux-x64",
-   "size": 341914128,
-   "sha256": "bfb3703ad5380242328459bc62ada4bde8ae7ba57c6e1eeadb9c00e08874c478"
+   "name": "linux--claude-2.1.325-linux-x64",
+   "size": 365842960,
+   "sha256": "0dc4f4a9a165fc60746d7ae8489712e5fc352f1e7ad4eb22e7141bd0812eb0cf"
   },
   {
-   "name": "linux--claude-2.1.322-linux-x64-musl",
-   "size": 328374856,
-   "sha256": "9bed6cfc5d2420b673a0b9fe41c71533a02904935cbc3b4cd110302d475fee6f"
+   "name": "linux--claude-2.1.325-linux-x64-musl",
+   "size": 352201992,
+   "sha256": "a5e3bd36dce97db0429705aa5c3573eea346a77938a89104b9c28fce409b20cd"
   },
   {
-   "name": "linux--gh_2.103.3_linux_amd64.deb",
-   "size": 15105286,
-   "sha256": "e3bafef96328d1a67de3a968bdfe1cc2ffd58cf6aba8b5e201356897ed06bb3d"
+   "name": "linux--gh_2.104.0_linux_amd64.deb",
+   "size": 15077566,
+   "sha256": "f90d578cbc4c3b067dfc4a1a540cef41faef64eebfb280b548ab32455977a21f"
   },
   {
    "name": "linux--node-v24.22.3-linux-x64.tar.xz",
@@ -93,44 +88,44 @@
    "sha256": "4f2b175a6d53a5c617a80dba2676238a0688cef28c6da4eba35c7d844e66fcfb"
   },
   {
-   "name": "linux--t3-0.1.10-preview.20261112.4554-linux-x64.tar.gz",
-   "size": 149659713,
-   "sha256": "d4accf6854ea76cc13285bb5efdcbf76d924f9f57d1f3861f1d48c23e896aaaa"
+   "name": "linux--t3-0.1.10-nightly.20261115.4736-linux-x64.tar.gz",
+   "size": 182987751,
+   "sha256": "3e84b6fd1c1462f54839480f93b0300c415f4a68ad75c2b8f24c14f7066c7b5d"
   },
   {
-   "name": "linux--T3-Code-0.1.10-preview.20261112.4554-amd64.deb",
-   "size": 175607744,
-   "sha256": "d182276f6424294115cd781435bdde50d2693fe652a932b25c307ae54cc02e3e"
+   "name": "linux--T3-Code-0.1.10-nightly.20261115.4736-amd64.deb",
+   "size": 207537988,
+   "sha256": "39554eedf18dc50138b4b08e0ec4eb574b9457ca4a02f5fa586445a479b32244"
   },
   {
-   "name": "linux--T3-Code-0.1.10-preview.20261112.4554-x86_64.AppImage",
-   "size": 215234699,
-   "sha256": "152c517975d1986fa5e9fb31ca748931a3dcf4cf2c6a2272841c04c9cf22b2e9"
+   "name": "linux--T3-Code-Nightly-x86_64.AppImage",
+   "size": 252451696,
+   "sha256": "77dc93008526416731b06080e9198fda887af9bf7be60e4f785f13496e1c52c8"
   },
   {
-   "name": "repo--agent-toolkit-v1.0.4.zip",
-   "size": 941266,
-   "sha256": "a48b1013b37058bf1ab7ed236592f1aeefe42ed423ccfce19fab463f8d940753"
+   "name": "repo--agent-toolkit-v1.0.5.zip",
+   "size": 947494,
+   "sha256": "ee084bd361c7e5e5d3584447bd18e274311da11ab3963656cb256ae24555c110"
   },
   {
    "name": "SHA256SUMS.txt",
-   "size": 4233,
-   "sha256": "9dd48d4d5298d3e6c176682f30ffe2de1684eea5f191b29fbd352798bd5bf057"
+   "size": 4119,
+   "sha256": "ceff09eff0938b9cf063a8fdbb32231446dbc92287b12d63b210251ed0d2c1e8"
   },
   {
-   "name": "windows--claude-2.1.322-win32-x64.exe",
-   "size": 346496160,
-   "sha256": "345996b4bdbae21d817f750fae2f34cbf8d81224a5444c78136091d121beb298"
+   "name": "windows--claude-2.1.325-win32-x64.exe",
+   "size": 372461728,
+   "sha256": "87e0cb6ae0f4775da388cd3043f4d8097ef961dcddbf55fe90bc61ffc3f57a30"
   },
   {
-   "name": "windows--gh_2.103.3_windows_amd64.zip",
-   "size": 15197187,
-   "sha256": "98d0cfa794721665d7973dd728c78aff7bd836d58f10f6d7a03568eccb0a22e0"
+   "name": "windows--gh_2.104.0_windows_amd64.zip",
+   "size": 15169772,
+   "sha256": "08c06d10482f12c478018cd259f64acbd5f625712cadf331aad19ba973c879e5"
   },
   {
    "name": "windows--nightly.yml",
-   "size": 445,
-   "sha256": "654aafaee19e540a19d186313b536dabfc6045422d44934efc60cce2d7484333"
+   "size": 439,
+   "sha256": "0aa4ca00c7fa392f2fa0f774d62d245461389a281d63a398ae6b6fc7d9d65dab"
   },
   {
    "name": "windows--node-v24.22.3-win-x64.zip",
@@ -155,7 +150,7 @@
   {
    "name": "windows--SHA256SUMS",
    "size": 576,
-   "sha256": "1a302bfe6c179955cd2961287f92585fff8264aca209c5da49afc32ed1df8f37"
+   "sha256": "a08113d8a886cef408aed8a99ec1cb70f0de42bb623c4a0f5ffa921eecda52c7"
   },
   {
    "name": "windows--SHASUMS256-node-v24.22.2.txt",
@@ -168,39 +163,39 @@
    "sha256": "06d17307d84ec057dd2783863f12cb228c9273f9424b330532e4e3699f5d47c9"
   },
   {
-   "name": "windows--t3-0.1.10-preview.20261112.4554-win32-x64.zip",
-   "size": 134702394,
-   "sha256": "2073797a1917121d8c7d2b1359589ef7d1f543c1994e19a765bfa747aa38af9c"
+   "name": "windows--t3-0.1.10-nightly.20261115.4736-win32-x64.zip",
+   "size": 167439611,
+   "sha256": "2a19a5b3b3eea0454e0b2a31aa969ed343f248ef20e02ef7f3db2eb175d70508"
   },
   {
-   "name": "windows--T3-Code-0.1.10-preview.20261112.4554-x64.exe",
-   "size": 326313920,
-   "sha256": "d4e4a183c8feff4aff65a5373505bc79ddaaf23a2455c4939340991defdb7657"
+   "name": "windows--T3-Code-0.1.10-nightly.20261115.4736-x64.exe",
+   "size": 391028536,
+   "sha256": "8188b55dad07f26118df1a855f4e860ee08ce46e456f9b79caad31427a32c85a"
   },
   {
-   "name": "windows--T3-Code-0.1.10-preview.20261112.4554-x64.zip",
-   "size": 196646422,
-   "sha256": "b12a9d3b1a46044c46cbd7f0b98854235745aba4e30f8569e49751ac00c681e2"
+   "name": "windows--T3-Code-0.1.10-nightly.20261115.4736-x64.zip",
+   "size": 238175162,
+   "sha256": "694ee25210fd507134544b8c66ed1d687a452d5a0acb6897d2fca4f2d2eabdb6"
   },
   {
    "name": "wsl--ubuntu-dev.tar.gz.part1",
    "size": 1992294400,
-   "sha256": "d02eb9eb3d198be567c4a60dd0b32e6e51a3c12f1e0d1215793ece389cee97a1"
+   "sha256": "bb5f99bfef32d5b0bdfdb28bf5296c23bda24e15712dc6f3ddf12e5d24da1885"
   },
   {
    "name": "wsl--ubuntu-dev.tar.gz.part2",
    "size": 1992294400,
-   "sha256": "727e21241e89e89b822560c29444adb46f5b78ce145b68b73f1ce656b8aab5a2"
+   "sha256": "01a1d6f4fc1394af1b83ba220ff5dc53e982b96310a9eb494d2c0151356adcac"
   },
   {
    "name": "wsl--ubuntu-dev.tar.gz.part3",
-   "size": 268275487,
-   "sha256": "4f9c4d8196b18c499351410eb63c37c32b68a25337cc6aeb9d3b6a711af0541e"
+   "size": 298457359,
+   "sha256": "584c585eb33ed4fb56914e21442d22d787162c1c73be15836a3032b875b4dc85"
   },
   {
    "name": "wsl--ubuntu-dev.tar.gz.sha256",
    "size": 88,
-   "sha256": "14645ca5e833b093abafc7aed3466eb165892892b392afd756854e1ea0673352"
+   "sha256": "c17f0c52d8e8c194424f2d1071ee4a9164faa35d48890c159046ad17644757d9"
   },
   {
    "name": "wsl--ubuntu-noble-SHA256SUMS",
@@ -221,11 +216,11 @@
  "pins": [
   [
    "T3 Code",
-   "0.1.10-preview.20261112.4554"
+   "0.1.10-nightly.20261115.4736"
   ],
   [
    "Claude Code CLI",
-   "2.1.322"
+   "2.1.325"
   ],
   [
    "Node.js",
@@ -237,7 +232,7 @@
   ],
   [
    "GitHub CLI",
-   "2.103.3"
+   "2.104.0"
   ],
   [
    "PowerShell 7",
@@ -257,20 +252,20 @@
   ],
   [
    "T3 tool cache",
-   "agent-device 0.21.36, chrome-headless-shell 157.0.8103.38, expo-device-hub 0.22.1"
+   "agent-device 0.21.36, chrome-headless-shell 157.0.8103.78, expo-device-hub 0.22.1"
   ],
   [
    "Playwright",
-   "1.65.0 with chromium_headless_shell-1254 and chromium-1254"
+   "1.65.1 with chromium_headless_shell-1255 and chromium-1255"
   ]
  ],
- "skills": "the public anthropics/skills set (Apache-2.0), t3dotgg/tstack (MIT) and Real-Fruit-Snacks/killer-skills (MIT)",
+ "skills": "the public anthropics/skills set (Apache-2.0), and t3dotgg/tstack (MIT)",
  "marketplaces": [
   {
    "name": "atk-core-plugins",
    "upstream": "anthropics/claude-plugins-official",
-   "commit": "e37d307",
-   "plugins": 50,
+   "commit": "b5b01ac",
+   "plugins": 51,
    "enabled": [
     "feature-dev",
     "code-review",
@@ -287,7 +282,7 @@
   {
    "name": "atk-knowledge-work",
    "upstream": "anthropics/knowledge-work-plugins",
-   "commit": "877a617",
+   "commit": "e91a134",
    "plugins": 22,
    "enabled": [
     "engineering"
@@ -319,14 +314,14 @@
   {
    "name": "trailofbits",
    "upstream": "trailofbits/skills",
-   "commit": "e4dd0bb",
+   "commit": "149d7b2",
    "plugins": 47,
    "enabled": []
   },
   {
    "name": "atk-financial-services",
    "upstream": "anthropics/financial-services",
-   "commit": "6056506",
+   "commit": "3e32c22",
    "plugins": 19,
    "enabled": []
   }
@@ -484,7 +479,7 @@
   ]
  },
  "install_log": {
-  "tag": "v1.0.4",
+  "tag": "v1.0.5",
   "user": "atk-user",
   "standard": true,
   "flags": "",
@@ -501,11 +496,9 @@
    "== Restoring T3 manifest snapshots",
    "== Restoring Playwright browsers -> C:\\Users\\atk-user\\AppData\\Local\\Programs\\agent-toolkit\\cache\\ms-playwright",
    "== Installing npm packages from the seeded cache -> C:\\Users\\atk-user\\AppData\\Local\\Programs\\agent-toolkit\\cache\\npm",
+   "WARNING: global npm install of agent-device from the cache failed; T3 still works from its own tool cache",
    "WARNING: global npm install of expo-device-hub from the cache failed; T3 still works from its own tool cache",
    "== Installing Claude Code skills",
-   "== killer-skills packs (the runtime and font pack killer-design and killer-repo use) -> C:\\Users\\atk-user\\AppData\\Local\\Programs\\agent-toolkit\\cache",
-   "  installed killer-skills",
-   "  installed killer-skills-fonts",
    "== Installing Python packages for the document skills (wheels kept in C:\\Users\\atk-user\\AppData\\Local\\Programs\\agent-toolkit\\cache\\pip-wheelhouse)",
    "== MCP servers",
    "== npm MCP servers (19)",
@@ -543,7 +536,7 @@
    "To check the install from a new terminal: .\\scripts\\check-install.ps1"
   ],
   "check": [
-   "== check-install.ps1 -StandardUser -MaxProfileMB 1024 -Offline",
+   "== check-install.ps1 -StandardUser -MaxProfileMB 1024",
    "== Account",
    "  ok    account          runnervmm7ud1\\atk-user, a standard user: not in Administrators",
    "== This machine",
@@ -556,16 +549,16 @@
    "  ok    git              git version 2.56.1.windows.1  (C:\\Users\\atk-user\\AppData\\Local\\Programs\\agent-toolkit\\git\\cmd\\git.exe)",
    "  note  git              a new terminal runs C:\\Program Files\\Git\\bin\\git.exe first; it was installed for all users",
    "  ok    bash             GNU bash, version 5.3.15(2)-release (x86_64-pc-cygwin)  (C:\\Users\\atk-user\\AppData\\Local\\Programs\\agent-toolkit\\git\\bin\\bash.exe)",
-   "  ok    gh               gh version 2.103.3 (2026-10-26)  (C:\\Users\\atk-user\\AppData\\Local\\Programs\\agent-toolkit\\gh\\bin\\gh.exe)",
+   "  ok    gh               gh version 2.104.0 (2026-11-12)  (C:\\Users\\atk-user\\AppData\\Local\\Programs\\agent-toolkit\\gh\\bin\\gh.exe)",
    "  note  gh               a new terminal runs C:\\Program Files\\GitHub CLI\\gh.exe first; it was installed for all users",
    "  ok    pwsh             PowerShell 7.7.0  (C:\\Users\\atk-user\\AppData\\Local\\Programs\\agent-toolkit\\pwsh\\pwsh.exe)",
    "  note  pwsh             a new terminal runs C:\\Program Files\\PowerShell\\7\\pwsh.exe first; it was installed for all users",
    "  ok    python           Python 3.13.17  (C:\\Users\\atk-user\\AppData\\Local\\Programs\\agent-toolkit\\python\\python.exe)",
    "  note  python           a new terminal runs C:\\hostedtoolcache\\windows\\Python\\3.12.10\\x64\\python.exe first; it was installed for all users",
-   "  ok    claude           2.1.322 (Claude Code)  (C:\\Users\\atk-user\\AppData\\Local\\Programs\\agent-toolkit\\bin\\claude.exe)",
+   "  ok    claude           2.1.325 (Claude Code)  (C:\\Users\\atk-user\\AppData\\Local\\Programs\\agent-toolkit\\bin\\claude.exe)",
    "  ok    npm prefix       C:\\Users\\atk-user\\AppData\\Local\\Programs\\agent-toolkit\\npm",
    "  note  npm prefix       npm_config_prefix is set to C:\\npm\\prefix here, so npm install -g in a terminal goes there; the kit's own packages are in C:\\Users\\atk-user\\AppData\\Local\\Programs\\agent-toolkit\\npm",
-   "  ok    t3 code          0.1.10.0  (C:\\Users\\atk-user\\AppData\\Local\\Programs\\t3code\\T3 Code (Beta).exe)",
+   "  ok    t3 code          0.1.10.0  (C:\\Users\\atk-user\\AppData\\Local\\Programs\\t3code\\T3 Code (Nightly).exe)",
    "== User environment variables",
    "  ok    variables        8 checked, including AGENT_TOOLKIT_HOME and DISABLE_AUTOUPDATER",
    "== Claude Code config",
@@ -578,15 +571,11 @@
    "  ok    plugins          12 enabled and loading",
    "  ok    pyright          C:\\Users\\atk-user\\AppData\\Local\\Programs\\agent-toolkit\\npm\\pyright-langserver.cmd",
    "  ok    rust-analyzer    C:\\Users\\atk-user\\AppData\\Local\\Programs\\agent-toolkit\\bin\\rust-analyzer.exe",
-   "== Skills and packs",
-   "  ok    skills           docx, full-send, killer-design, killer-repo, killer-council and the rest",
-   "  ok    pack             C:\\Users\\atk-user\\AppData\\Local\\Programs\\agent-toolkit\\cache\\killer-skills\\runtime.json",
-   "  ok    pack             C:\\Users\\atk-user\\AppData\\Local\\Programs\\agent-toolkit\\cache\\killer-skills-fonts\\fonts.json",
-   "== killer-design, offline: a page set from the font pack, screenshotted from the runtime",
-   "  ok    offline shot     IBM Plex Sans loaded from the font pack; Chromium from the runtime",
+   "== Skills",
+   "  ok    skills           docx, full-send and the rest",
    "== Footprint",
-   "  ok    install root     C:\\Users\\atk-user\\AppData\\Local\\Programs\\agent-toolkit: 10,108 MB",
-   "  ok    profile          365 MB where a roaming profile would copy it: ~\\.t3\\tools 331, ~\\.claude\\skills 19, ~\\.claude\\plugins 4, ~\\agent-toolkit-docs 11",
+   "  ok    install root     C:\\Users\\atk-user\\AppData\\Local\\Programs\\agent-toolkit: 9,895 MB",
+   "  ok    profile          357 MB where a roaming profile would copy it: ~\\.t3\\tools 330, ~\\.claude\\skills 12, ~\\.claude\\plugins 4, ~\\agent-toolkit-docs 11",
    "",
    "Every check passed, for runnervmm7ud1\\atk-user."
   ]
